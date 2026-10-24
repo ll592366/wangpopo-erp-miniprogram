@@ -1,0 +1,60 @@
+/* components/notice-bar — 滚动通知栏（纵向跑马灯，一条一停 3.5 秒） */
+.nb {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+  margin-bottom: 24rpx;
+  padding: 0 20rpx;
+  background: #fdf3e3;
+  border: 2rpx solid #f3dfc0;
+  border-radius: 16rpx;
+  overflow: hidden;
+}
+
+.nb-icon {
+  flex: none;
+  font-size: 30rpx;
+  margin-right: 12rpx;
+  line-height: 1;
+}
+
+.nb-swiper {
+  flex: 1;
+  height: 88rpx;
+}
+
+.nb-item {
+  display: flex;
+  align-items: center;
+  height: 88rpx;
+}
+
+.nb-tag {
+  flex: none;
+  font-size: 22rpx;
+  line-height: 1.4;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  margin-right: 12rpx;
+  color: #ffffff;
+}
+
+.nb-tag-alert { background: #c77700; }
+.nb-tag-req   { background: #b03a2e; }
+.nb-tag-more  { background: #8a8a8a; }
+
+.nb-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #6b4a10;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.nb-go {
+  flex: none;
+  font-size: 32rpx;
+  color: #b09060;
+  margin-left: 8rpx;
+}

@@ -1,0 +1,98 @@
+<view class="page">
+  <!-- 我的账号：管理端自己的信息；改密收进弹层（老板 2026-09-12：账号后面加改密按钮，弹出更简洁） -->
+  <view class="card">
+    <view class="card-title">
+      我的账号
+      <text class="view-log-link" bindtap="onViewLog">查看日记</text>
+    </view>
+    <view class="list-item" style="padding-left:0;padding-right:0">
+      <view class="li-main">
+        <view class="li-title">{{user.name || '…'}} <text class="tag green">{{roleLabel}}</text></view>
+        <view class="li-sub"><text user-select="{{true}}">账号 {{user.username}}</text></view>
+      </view>
+      <view class="li-right">
+        <text class="btn-mini ghost" bindtap="openPwd">改密</text>
+        <text class="btn-mini danger" bindtap="onLogout">退出</text>
+      </view>
+    </view>
+    <view class="hint">「改密」改的是你自己（管理端）的密码；下面的分店管理用来重置各门店账号密码。</view>
+  </view>
+
+  <!-- 改密弹层（居中卡片） -->
+  <view class="pwd-mask" wx:if="{{pwdOpen}}" bindtap="closePwd">
+    <view class="pwd-panel" catchtap="noop">
+      <view class="pwd-panel-title">修改密码</view>
+      <view class="pwd-wrap">
+        <input class="input pwd-input" password="{{!showOld}}" placeholder="原密码"
+          value="{{oldPassword}}" bindinput="onOldPassword" />
+        <text class="pwd-eye" bindtap="toggleOld">{{showOld ? '🙈' : '👁'}}</text>
+      </view>
+      <view class="pwd-wrap">
+        <input class="input pwd-input" password="{{!showNew}}" placeholder="新密码（至少 6 位）"
+          value="{{newPassword}}" bindinput="onNewPassword" />
+        <text class="pwd-eye" bindtap="toggleNew">{{showNew ? '🙈' : '👁'}}</text>
+      </view>
+      <view class="pwd-wrap">
+        <input class="input pwd-input" password="{{!showConfirm}}" placeholder="确认新密码"
+          value="{{confirmPassword}}" bindinput="onConfirmPassword" />
+        <text class="pwd-eye" bindtap="toggleConfirm">{{showConfirm ? '🙈' : '👁'}}</text>
+      </view>
+      <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting}}" bindtap="onChangePassword">保存新密码</button>
+      <button class="btn btn-ghost" style="margin-top:12rpx" bindtap="closePwd">取消</button>
+    </view>
+  </view>
+
+  <!-- 操作日记弹层 -->
+  <view class="ip-mask" wx:if="{{logOpen}}" bindtap="closeLog">
+    <view class="ip-panel log-panel" catchtap="noop">
+      <view class="ip-header">
+        <view class="ip-title">操作日记（{{logs.length}} 条）</view>
+        <text class="ip-close" bindtap="closeLog">关闭</text>
+      </view>
+      <view class="ip-list" style="max-height:70vh;overflow-y:auto">
+        <view wx:if="{{logs.length === 0}}" class="ip-empty-row">暂无操作记录</view>
+        <block wx:for="{{logs}}" wx:key="_id">
+          <view class="log-row">
+            <view class="log-row-head">
+              <text class="log-actor">{{item.actorName || '系统'}}</text>
+              <text class="log-time">{{item.timeText}}</text>
+            </view>
+            <view class="log-row-body">{{item.actionLabel}} {{item.target}}</view>
+            <view wx:if="{{item.after}}" class="log-row-detail">{{item.after}}</view>
+          </view>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">分店管理（{{rows.length}}）</view>
+    <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+    <view class="searchbar">
+      <view class="searchbar-box">
+        <input class="searchbar-input" value="{{kw}}" data-kw="kw" bindinput="onSearchInput" placeholder="搜店名或账号" confirm-type="search" />
+        <text class="searchbar-clear" wx:if="{{kw}}" data-kw="kw" bindtap="onSearchClear">✕</text>
+      </view>
+    </view>
+    <view class="searchbar-empty" wx:if="{{kw && rows.length === 0}}">没有匹配「{{kw}}」</view>
+    <view wx:if="{{rows.length === 0 && !kw}}" class="empty">暂无分店（分店由门店端在登录页「注册开店」产生）</view>
+
+    <block wx:for="{{rows}}" wx:key="_id">
+      <!-- 一行式（老板 2026-09-15 拍板：与「我的账号」同款一行显示 店铺 / 账号 / 改密 / 改店名 / 闭店） -->
+      <view class="list-item">
+        <view class="li-main">
+          <view class="li-title">{{item.name}} <text class="tag {{item.closed ? 'gray' : 'green'}}">{{item.closed ? '已闭店' : '营业中'}}</text></view>
+          <view class="li-sub"><text user-select="{{true}}">{{item.accText}}</text></view>
+        </view>
+        <view class="li-right">
+          <text class="btn-mini ghost" data-id="{{item._id}}" data-name="{{item.name}}" bindtap="resetAllPwd">改密</text>
+          <text class="btn-mini ghost" data-id="{{item._id}}" bindtap="renameStore">改店名</text>
+          <text class="btn-mini {{item.closed ? 'primary' : 'danger'}}" data-id="{{item._id}}" bindtap="toggleStore">{{item.closed ? '复业' : '闭店'}}</text>
+        </view>
+      </view>
+      <view style="height:16rpx"></view>
+    </block>
+
+    <view class="hint">一家店一行管到底（与「我的账号」同款）：改密 = 重置该店全部账号密码；改店名、闭店/复业也在同一行。闭店后该店账号无法登录（文案与密码错误区分），复业即恢复，数据全保留。</view>
+  </view>
+</view>

@@ -1,0 +1,28 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/manager/home/home",
+    "pages/manager/goods/goods",
+    "pages/manager/purchase/purchase",
+    "pages/manager/requisition-process/requisition-process",
+    "pages/manager/wh-stock-alert/wh-stock-alert",
+    "pages/manager/stores-business/stores-business",
+    "pages/manager/store-detail/store-detail",
+    "pages/manager/consume-summary/consume-summary",
+    "pages/manager/shops-accounts/shops-accounts",
+    "pages/shop/production/production",
+    "pages/shop/requisition/requisition",
+    "pages/shop/store-stock/store-stock",
+    "pages/shop/consume-summary/consume-summary"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#b03a2e",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "王婆婆家常菜",
+    "backgroundColor": "#f6f5f2",
+    "backgroundTextStyle": "dark"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

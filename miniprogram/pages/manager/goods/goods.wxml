@@ -1,0 +1,139 @@
+<view class="page">
+  <view class="btn-row" style="margin-bottom:24rpx">
+    <button class="btn {{tab === 'material' ? 'btn-primary' : 'btn-ghost'}}" data-tab="material" bindtap="switchTab">食材档案</button>
+    <button class="btn {{tab === 'dish' ? 'btn-primary' : 'btn-ghost'}}" data-tab="dish" bindtap="switchTab">菜品档案</button>
+  </view>
+
+  <!-- 食材 -->
+  <block wx:if="{{tab === 'material'}}">
+    <view class="card">
+      <view class="card-title">{{editingId ? '编辑食材档案' : '新建食材档案'}}</view>
+      <view class="sub">档案是唯一的录入入口：名称 / 规格 / 单位 / 预警值都在这里填；采购入库只负责选和填数量。</view>
+      <view class="field">
+        <label class="field-label">名称</label>
+        <input class="input" value="{{mName}}" bindinput="onMName" placeholder="例：牛肉片" />
+      </view>
+      <view class="form-row">
+        <view class="field">
+          <label class="field-label">规格（可空 = 说明文本）</label>
+          <input class="input" value="{{mSpec}}" bindinput="onMSpec" placeholder="例：2.5kg/包 · 1×4" />
+        </view>
+        <view class="field">
+          <label class="field-label">单位</label>
+          <input class="input" value="{{mUnit}}" bindinput="onMUnit" placeholder="包 / 盒 / 斤" />
+        </view>
+      </view>
+      <view class="form-row">
+        <view class="field">
+          <label class="field-label">预警值（可空 = 用默认 2）</label>
+          <input class="input" type="digit" value="{{mTh}}" bindinput="onMTh" placeholder="例：2" />
+        </view>
+        <view class="field" wx:if="{{!editingId}}">
+          <label class="field-label">初始数量（可空）</label>
+          <input class="input" type="digit" value="{{mQty}}" bindinput="onMQty" placeholder="例：50" />
+        </view>
+        <view class="field" wx:else>
+          <label class="field-label">总仓数量（{{mUnit || '单位'}}）</label>
+          <input class="input" type="digit" value="{{mQty}}" bindinput="onMQty" placeholder="例：3" />
+        </view>
+      </view>
+      <button class="btn btn-primary" disabled="{{matSaving}}" bindtap="saveMaterial">{{editingId ? '保存修改' : '保存档案'}}</button>
+      <button class="btn btn-ghost" wx:if="{{editingId}}" style="margin-top:12rpx" bindtap="cancelEdit">取消编辑</button>
+      <view class="hint" wx:if="{{!editingId}}">填了初始数量会顺手记一笔「建档初始库存」的入库流水，方便对账。换算在菜品那边（每份用量 ÷ 份数）。</view>
+      <view class="hint" wx:else>编辑可改档案资料（名称/规格/单位/预警值）与总仓数量：数量填的就是「覆盖后的总仓现值」，留空或不变则不动库存。</view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">食材列表（{{matCountText}}）</view>
+      <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+      <view class="searchbar">
+        <view class="searchbar-box">
+          <input class="searchbar-input" value="{{kwMat}}" data-kw="kwMat" bindinput="onSearchInput" placeholder="搜食材名或规格" confirm-type="search" />
+          <text class="searchbar-clear" wx:if="{{kwMat}}" data-kw="kwMat" bindtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view class="searchbar-empty" wx:if="{{kwMat && viewMaterials.length === 0}}">没有匹配「{{kwMat}}」</view>
+      <!-- 老板 2026-10 拍板：默认只显示在售的；已下架的点这个开关找回来，还能重新上架 -->
+      <text class="gd-switch {{showInactive ? 'gd-switch-on' : ''}}" bindtap="toggleShowInactive"><text wx:if="{{showInactive}}">✓ </text>显示已下架（{{inactiveCount}}）</text>
+      <view class="hint" style="margin-bottom:12rpx">规格为空的行会标出来，点「编辑」就能补（补完采购页自动带出）。</view>
+      <view wx:if="{{materials.length === 0}}" class="empty">暂无食材档案</view>
+      <view wx:elif="{{!kwMat && viewMaterials.length === 0}}" class="empty">暂无在售食材（已下架的可点上方开关查看）</view>
+      <view wx:for="{{viewMaterials}}" wx:key="_id" class="list-item {{item.isActive === false ? 'gd-off' : ''}}">
+        <view class="li-main">
+          <view class="li-title">{{item.name}} <text class="tag {{item.isActive === false ? 'gray' : 'green'}}">{{item.isActive === false ? '已下架' : '在售'}}</text><text wx:if="{{!item.spec}}" class="tag orange">规格未填</text></view>
+          <view class="li-sub">
+            <text wx:if="{{item.spec}}">规格：{{item.spec}} · </text>单位：{{item.unit}} · 预警值：{{item.lowStockThreshold || '默认'}} · 库存：<text class="num" user-select="{{true}}">{{item.stock || 0}}</text> {{item.unit}}
+          </view>
+        </view>
+        <view class="li-right">
+          <!-- 已下架行 → 「上架」（无副作用，直接生效）；在售行 → 「下架」（先弹确认讲清后果） -->
+          <text wx:if="{{item.isActive === false}}" class="btn-mini primary" data-id="{{item._id}}" data-active="1" bindtap="toggleActive">上架</text>
+          <text wx:else class="btn-mini ghost" data-id="{{item._id}}" data-active="0" bindtap="toggleActive">下架</text>
+          <text class="btn-mini ghost" data-id="{{item._id}}" bindtap="editMaterial">编辑</text>
+          <text class="btn-mini danger" data-id="{{item._id}}" bindtap="removeMaterial">删除</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 菜品 -->
+  <block wx:if="{{tab === 'dish'}}">
+    <view class="card">
+      <view class="card-title">{{editingDishId ? '编辑菜品' : '新增菜品（内嵌消耗清单）'}}</view>
+      <view class="field">
+        <label class="field-label">菜品名称</label>
+        <input class="input" value="{{dName}}" bindinput="onDName" placeholder="例：婆婆金汤牛肉" />
+      </view>
+      <view class="ci-block" wx:for="{{ciRows}}" wx:key="index" wx:for-index="i">
+        <view class="ci-row">
+          <search-picker
+            class="ci-picker"
+            options="{{materialOptions}}"
+            value="{{item.materialIndex >= 0 ? materialOptions[item.materialIndex]._id : ''}}"
+            placeholder="选择食材"
+            data-i="{{i}}"
+            bind:change="onCiMaterial" />
+          <text class="del" data-i="{{i}}" bindtap="removeCiRow">删除</text>
+        </view>
+        <view class="ci-sub">
+          <input class="input" type="digit" value="{{item.qty}}" data-i="{{i}}" bindinput="onCiQty" placeholder="每份用量" />
+          <input class="input" type="digit" value="{{item.portions}}" data-i="{{i}}" bindinput="onCiPortions" placeholder="=N份（不填默认1）" />
+        </view>
+      </view>
+      <view class="btn-row">
+        <button class="btn btn-ghost" bindtap="addCiRow">＋ 添加食材</button>
+        <button class="btn btn-primary" disabled="{{dishSaving}}" bindtap="saveDish">{{editingDishId ? '保存修改' : '保存菜品'}}</button>
+      </view>
+      <button class="btn btn-ghost" wx:if="{{editingDishId}}" style="margin-top:12rpx" bindtap="cancelEditDish">取消编辑</button>
+      <view class="hint">「A 包 = B 份」→ 每份用量 A÷B 包（填 每份用量=A、=N份 填 B）。例：1 包做 4 份 → 每份 0.25 包。</view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">菜品列表（{{dishCountText}}）</view>
+      <view class="searchbar">
+        <view class="searchbar-box">
+          <input class="searchbar-input" value="{{kwDish}}" data-kw="kwDish" bindinput="onSearchInput" placeholder="搜菜名" confirm-type="search" />
+          <text class="searchbar-clear" wx:if="{{kwDish}}" data-kw="kwDish" bindtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view class="searchbar-empty" wx:if="{{kwDish && dishes.length === 0}}">没有匹配「{{kwDish}}」</view>
+      <view wx:if="{{dishes.length === 0 && !kwDish}}" class="empty">暂无菜品档案</view>
+      <view wx:for="{{dishes}}" wx:key="_id" class="list-item">
+        <view class="li-main" data-id="{{item._id}}" bindtap="editDish" style="cursor:pointer">
+          <view class="li-title">{{item.name}} <text class="tag {{item.isActive === false ? 'gray' : 'green'}}">{{item.isActive === false ? '停用' : '启用'}}</text></view>
+          <view class="consume-chips" wx:if="{{item.consumeChips && item.consumeChips.length}}">
+            <view wx:for="{{item.consumeChips}}" wx:for-item="c" wx:key="name" class="consume-chip">
+              <text class="consume-chip-name">{{c.name}}</text>
+              <text class="consume-chip-qty">{{c.perText}}</text>
+            </view>
+          </view>
+          <view class="li-sub" wx:else>{{item.consumeText}}</view>
+        </view>
+        <view class="li-right">
+          <text class="btn-mini ghost" data-id="{{item._id}}" bindtap="editDish">编辑</text>
+          <text class="btn-mini danger" data-id="{{item._id}}" bindtap="removeDish">删除</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

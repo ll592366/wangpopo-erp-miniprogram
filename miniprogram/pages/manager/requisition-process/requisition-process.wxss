@@ -1,0 +1,66 @@
+/* pages/manager/requisition-process/requisition-process.wxss
+ * 全局样式（app.wxss）之外、本页自有样式：只有「修改数量」弹层 + 「已调整」提示。
+ * 新增类名统一 adj- 前缀，避免与全局 / 别的页面撞名。
+ * 备注：页面 wxss 优先级高于 app.wxss，故 .adj-panel 可以覆盖 .ip-panel 的宽高。
+ */
+
+/* ---------- 已调整提示（待处理 / 已处理列表通用，浅色小字） ---------- */
+.adj-note {
+  display: inline-block;
+  margin-top: 8rpx;
+  padding: 6rpx 14rpx;
+  font-size: 22rpx;
+  line-height: 1.4;
+  color: var(--text-sub, #777777);
+  background: var(--gray-light, #f0efec);
+  border-radius: 8rpx;
+}
+
+/* ---------- 修改数量弹层 ---------- */
+/* 比默认 .ip-panel 更宽更高：要放多行食材 + 底部三个按钮 */
+.adj-panel { width: 88%; max-height: 80vh; }
+
+.adj-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 14rpx 24rpx;
+  border-bottom: 1rpx solid #efece5;
+}
+.adj-row:last-child { border-bottom: none; }
+.adj-name { flex: 1; min-width: 0; font-size: 28rpx; color: var(--text); line-height: 1.4; }
+.adj-spec { font-size: 22rpx; color: var(--gray, #8a8a8a); font-weight: 400; }
+.adj-ctrl { display: flex; align-items: center; gap: 12rpx; flex-shrink: 0; }
+/* 数量输入框：高度继承全局 .input 的 72rpx（原生 input 只认 height，min-height 无效），
+   这里只收窄宽度 + 居中，和全项目输入框观感一致 */
+.adj-qty {
+  width: 150rpx;
+  text-align: center;
+  padding: 0 12rpx;
+}
+.adj-ph { color: #bbbbbb; }
+.adj-del { margin-right: 0; }
+
+.adj-footer {
+  display: flex;
+  gap: 12rpx;
+  padding: 16rpx 24rpx;
+  border-top: 2rpx solid var(--gray-light, #f0efec);
+}
+.adj-btn { flex: 1; font-size: 26rpx; padding: 16rpx 0; }
+
+.adj-hint {
+  padding: 8rpx 24rpx 24rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--text-sub, #777777);
+}
+
+/* ---------- 驳回按钮（2026-10-13 恢复） ----------
+ * 全局 .btn-mini.ghost 是白底描边（primary 色）；驳回要跟「修改」(danger 实底) 拉开，
+ * 用 danger 描边（白底红字红框），不新增全局样式、不改全局观感 */
+.rej-btn {
+  color: var(--danger, #d9534f);
+  border: 2rpx solid var(--danger, #d9534f);
+  background: #fff;
+}

@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "search-picker": "/components/search-picker/search-picker"
+  },
+  "navigationBarTitleText": "食材申请"
+}

@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "notice-bar": "/components/notice-bar/notice-bar",
+    "search-picker": "/components/search-picker/search-picker"
+  },
+  "navigationBarTitleText": "商品管理"
+}

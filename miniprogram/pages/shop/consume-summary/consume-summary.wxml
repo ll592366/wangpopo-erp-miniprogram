@@ -1,0 +1,65 @@
+<view class="page">
+  <!-- 筛选卡：时间范围 +（管理端）门店选择 + 维度切换 -->
+  <view class="card">
+    <view class="cs-range">
+      <view wx:for="{{ranges}}" wx:key="key"
+        class="cs-pill {{range === item.key ? 'cs-pill-active' : ''}}"
+        data-key="{{item.key}}" bindtap="switchRange">{{item.label}}</view>
+    </view>
+
+    <!-- 自定义区间（老板 2026-09-19）：选「自定义」展开起止日期；from > to 自动纠正 -->
+    <view wx:if="{{range === 'custom'}}" class="fr-dates">
+      <text class="fr-date-label">从</text>
+      <picker class="fr-date" mode="date" value="{{customFrom}}" bindchange="onFromChange">
+        <view class="input readonly cs-picker-view"><text>{{customFrom}}</text></view>
+      </picker>
+      <text class="fr-date-label">到</text>
+      <picker class="fr-date" mode="date" value="{{customTo}}" bindchange="onToChange">
+        <view class="input readonly cs-picker-view"><text>{{customTo}}</text></view>
+      </picker>
+    </view>
+
+    <picker wx:if="{{isManager}}" class="cs-picker" mode="selector"
+      range="{{storeOptions}}" range-key="name" value="{{storeIndex}}" bindchange="onStoreChange">
+      <view class="input readonly cs-picker-view">
+        <text>{{storeName}}</text>
+        <text class="cs-caret">▾</text>
+      </view>
+    </picker>
+
+    <view class="rq-tabs">
+      <view class="rq-tab {{groupBy === 'material' ? 'rq-tab-active' : ''}}" data-key="material" bindtap="switchGroup">① 按食材</view>
+      <view class="rq-tab {{groupBy === 'dish' ? 'rq-tab-active' : ''}}" data-key="dish" bindtap="switchGroup">② 按菜品</view>
+    </view>
+  </view>
+
+  <!-- 汇总列表：点条目就地展开明细（不跳页） -->
+  <view class="card">
+    <view class="card-title">消耗汇总 · {{rangeLabel}}</view>
+    <view wx:if="{{summaryTruncated}}" class="hint">记录较多，结果为不完整聚合（已达后端上限），建议缩小时间范围</view>
+    <view wx:if="{{rows.length === 0}}" class="empty">{{emptyText}}</view>
+    <block wx:for="{{rows}}" wx:key="id" wx:for-index="i">
+      <view class="list-item cs-row" data-index="{{i}}" bindtap="toggleRow">
+        <view class="li-main">
+          <view class="li-title">{{item.title}}</view>
+          <view class="li-sub">{{item.sub}}</view>
+        </view>
+        <view class="li-right cs-right">
+          <text class="num num-pos" user-select="{{true}}">{{item.value}}</text>
+          <text class="cs-arrow">{{item.open ? '▾' : '▸'}}</text>
+        </view>
+      </view>
+      <view wx:if="{{item.open}}" class="cs-detail">
+        <view wx:if="{{item.details.length === 0}}" class="cs-detail-empty">无明细</view>
+        <view wx:for="{{item.details}}" wx:for-item="dt" wx:key="title" class="cs-detail-line">
+          <text class="cs-detail-name">{{dt.title}}</text>
+          <view class="cs-detail-val">
+            <text user-select="{{true}}">{{dt.value}}</text>
+            <text wx:if="{{dt.sub}}" class="cs-detail-sub">{{dt.sub}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view class="hint">消耗 = 门店通过「出品」扣减的食材记录，按食材原单位统计（纯数量口径）。</view>
+  </view>
+</view>

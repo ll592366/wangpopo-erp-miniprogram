@@ -1,0 +1,230 @@
+classDiagram
+    class User {
+      +string _id
+      +string openid
+      +string name
+      +string username
+      +Role role
+      +string storeId
+      +bool passwordChanged
+      +bool isActive
+    }
+
+    class Store {
+      +string _id
+      +string code
+      +string name
+      +StoreStatus status
+      +datetime closedAt
+      +datetime createdAt
+    }
+
+    class Material {
+      +string _id
+      +string name
+      +string unit
+      +int defaultShelfDays
+      +number lowStockThreshold
+      +bool isActive
+    }
+
+    class Dish {
+      +string _id
+      +string name
+      +ConsumeItem[] consumeItems
+      +bool isActive
+    }
+
+    class Purchase {
+      +string _id
+      +string itemId
+      +number qty
+      +string operatorId
+      +string bizDate
+      +datetime createdAt
+      +string remark
+    }
+
+    class Requisition {
+      +string _id
+      +string storeId
+      +string applicantId
+      +RequisitionItem[] items
+      +ReqStatus status
+      +datetime createdAt
+      +string bizDate
+      +string handledBy
+      +datetime handledAt
+      +string rejectReason
+    }
+
+    class RequisitionItem {
+      +string itemId
+      +number qty
+    }
+
+    class Production {
+      +string _id
+      +string storeId
+      +string dishId
+      +number qty
+      +ConsumeItem[] consumeItems
+      +ProdStatus status
+      +string operatorId
+      +datetime createdAt
+    }
+
+    class ConsumeItem {
+      +string itemId
+      +number qty
+    }
+
+    class Stocktake {
+      +string _id
+      +string storeId
+      +string itemId
+      +number actualQty
+      +number theoryQty
+      +number diff
+      +DiffType diffType
+      +string source
+      +string operatorId
+      +datetime createdAt
+    }
+
+    class StockBalance {
+      +string _id
+      +string storeId
+      +string itemId
+      +number qty
+      +number dayOpenQty
+      +number dayInQty
+      +number dayOutQty
+      +string dayOpenDate
+      +datetime updatedAt
+    }
+
+    class OpLog {
+      +string _id
+      +string actorId
+      +string actorName
+      +string action
+      +string target
+      +object before
+      +object after
+      +datetime createdAt
+    }
+
+    class AuthService {
+      +can(user, action, storeId) Result
+      +actionToRequiredRoles(action) string[]
+    }
+
+    class StockBalanceService {
+      +changeBalance(storeId, itemId, dQty)
+      +setBalanceQty(storeId, itemId, qty)
+      +addDayFlow(storeId, itemId, kind, qty)
+      +theoryOf(storeId, itemId) number
+    }
+
+    class DishService {
+      +consumeByDish(dishId, qty) Map
+      +validate(consumeItems) bool
+    }
+
+    class RegisterService {
+      +register(shopName, username, password) Store
+      +genCode(name) string
+    }
+
+    class StoreService {
+      +rename(storeId, name) Store
+      +resetPassword(storeId, newPassword) User
+      +toggle(storeId, to) Store
+    }
+
+    class RequisitionService {
+      +create(storeId, items) Requisition
+      +confirm(requisitionId) Result
+      +reject(requisitionId, reason) Result
+      +cancel(requisitionId) Result
+      +query(storeId, status) Requisition[]
+    }
+
+    class ReportService {
+      +business(from, to) Summary
+      +lowStock(storeId) Alert[]
+      +alerts(threshold) Alert[]
+    }
+
+    class ProductionService {
+      +create(storeId, dishId, qty) Production
+      +reverse(productionId) Result
+    }
+
+    User "1" --o "0..1" Store : shop 绑定本店（manager 为 null）
+    Dish "1" *-- "*" ConsumeItem : 内嵌消耗清单
+    ConsumeItem "*" --> "1" Material : 消耗食材（每份用量）
+    Purchase "*" --> "1" Material : 采购食材（总仓）
+    Requisition "*" --> "1" Store : 发起门店
+    Requisition "1" *-- "*" RequisitionItem : 申请明细
+    RequisitionItem "*" --> "1" Material : 申请食材
+    Production "*" --> "1" Dish : 出品菜品
+    Production "1" *-- "*" ConsumeItem : 扣减快照
+    Production "*" --> "1" Store : 出品门店
+    Stocktake "*" --> "1" Material : 盘点食材
+    Stocktake "*" --> "1" Store : 盘点门店
+    StockBalance "*" --> "1" Store : 所属维度（WAREHOUSE 或门店）
+    StockBalance "*" --> "1" Material : 食材余额
+    OpLog "*" --> "1" User : 操作人
+
+    AuthService ..> User : reads
+    RegisterService ..> Store : creates
+    RegisterService ..> User : creates
+    StoreService ..> Store : manages
+    StoreService ..> User : manages
+    StockBalanceService ..> StockBalance : manages
+    DishService ..> Dish : reads
+    RequisitionService ..> Requisition : manages
+    RequisitionService ..> StockBalance : updates（一步到位：总仓− / 门店+）
+    ProductionService ..> Production : writes
+    ProductionService ..> DishService : uses consumeItems
+    ProductionService ..> StockBalance : updates
+    ReportService ..> Production : aggregates
+    ReportService ..> StockBalance : reads
+
+    note for User "role 单值 manager | shop（不再有 roles[] / stores[] / 兼任）\nmanager: storeId=null（总仓，系统预置唯一）\nshop: 1 门店 1 账号，storeId=本店"
+    note for Store "status: open | closed（v0.8 闭店/复业）\nclosed 时该店 shop 账号登录被拒(1001)；数据不删除"
+    note for Material "unit 为自由输入文本（斤/个/份/包/瓶…），不枚举不换算\nlowStockThreshold 留空取全局默认 2"
+    note for Dish "consumeItems:[{itemId, qty}] 内嵌消耗清单（原配方）\n出品扣减 = 份数 × qtyPerPortion；无 price / 无 storeId"
+    note for Requisition "status: pending | confirmed | rejected | cancelled\nconfirm = 一步到位（总仓 −Σitems / 门店 +Σitems，同事务，无待收）"
+    note for Purchase "无金额 / 无供应商 / 无 storeId（隐含总仓 WAREHOUSE）"
+
+    class Role {
+      <<enumeration>>
+      manager
+      shop
+    }
+    class StoreStatus {
+      <<enumeration>>
+      open
+      closed
+    }
+    class ReqStatus {
+      <<enumeration>>
+      pending
+      confirmed
+      rejected
+      cancelled
+    }
+    class ProdStatus {
+      <<enumeration>>
+      confirmed
+      reversed
+    }
+    class DiffType {
+      <<enumeration>>
+      none
+      short
+      over
+    }

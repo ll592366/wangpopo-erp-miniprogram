@@ -1,0 +1,97 @@
+<view class="page">
+  <view class="rq-tabs">
+    <view class="rq-tab {{tab === 'req' ? 'rq-tab-active' : ''}}" data-tab="req" bindtap="switchTab">① 食材申请</view>
+    <view class="rq-tab {{tab === 'log' ? 'rq-tab-active' : ''}}" data-tab="log" bindtap="switchTab">② 申请记录</view>
+  </view>
+
+  <!-- ① 食材申请（总仓库存清单 + +/- 购物车） -->
+  <block wx:if="{{tab === 'req'}}">
+    <view class="card">
+      <view class="card-title">总仓食材库存清单（{{items.length}} 种）</view>
+      <view wx:if="{{items.length === 0}}" class="empty">暂无食材档案，请联系管理端维护</view>
+      <view wx:for="{{items}}" wx:key="_id" class="mr-row">
+        <view class="mr-main">
+          <view class="mr-name">{{item.name}}（{{item.unit}}）</view>
+          <view class="mr-sub">总仓 {{item.warehouseText}}</view>
+        </view>
+        <view class="mr-ctrl">
+          <text class="mr-btn" data-id="{{item._id}}" bindtap="onDec">－</text>
+          <input class="mr-qty" type="digit" value="{{cart[item._id] || ''}}" data-id="{{item._id}}" bindinput="onInputQty" placeholder="0" />
+          <text class="mr-btn" data-id="{{item._id}}" bindtap="onInc">＋</text>
+        </view>
+      </view>
+      <view class="hint">点击 +/- 调整申请数量；点底部「购物车」可查看 / 改 / 删已选食材；点「提交申请」发起。</view>
+    </view>
+
+    <!-- 占位：避免底部浮条遮挡 -->
+    <view style="height:120rpx;"></view>
+
+    <!-- 购物车浮条（v1.0.3 老板 2026-09-15 拍板：点购物车弹已选食材；底部单按钮「提交申请」） -->
+    <view class="cart-bar">
+      <view class="cart-bar-info" bindtap="onOpenCart">
+        <text class="cart-bar-label">购物车</text>
+        <text class="cart-bar-count">({{cartCount}})</text>
+      </view>
+      <view class="cart-bar-actions">
+        <view class="cb-btn cb-btn-primary {{cartCount === 0 ? 'cb-btn-disabled' : ''}}" bindtap="onSubmit">{{submitting ? '提交中' : '提交申请'}}</view>
+      </view>
+    </view>
+
+    <!-- 已选食材弹层（v1.0.3 老板 2026-09-15 拍板：点购物车弹出，可调数量/删除；关闭点遮罩） -->
+    <view class="ip-mask" wx:if="{{cartOpen}}" bindtap="onCloseCart">
+      <view class="ip-panel cart-panel" catchtap="noop">
+        <view class="ip-header">
+          <view class="ip-title">已选 {{cartCount}} 件食材</view>
+          <text class="ip-close" bindtap="onCloseCart">关闭</text>
+        </view>
+        <view class="ip-list">
+          <view wx:if="{{cartItems.length === 0}}" class="ip-empty-row">还没有选食材</view>
+          <view wx:for="{{cartItems}}" wx:key="_id" class="ip-row cart-row">
+            <text class="ip-row-label">{{item.name}}（{{item.unit}}）</text>
+            <view class="cart-row-ctrl">
+              <text class="mr-btn mr-btn-sm" data-id="{{item._id}}" bindtap="onDec">－</text>
+              <input class="mr-qty mr-qty-sm" type="digit" value="{{cart[item._id] || ''}}" data-id="{{item._id}}" bindinput="onInputQty" />
+              <text class="mr-btn mr-btn-sm" data-id="{{item._id}}" bindtap="onInc">＋</text>
+              <text class="cart-row-del" data-id="{{item._id}}" bindtap="onRemoveItem">删除</text>
+            </view>
+          </view>
+        </view>
+        <view class="cart-footer">
+          <view class="cb-btn cb-btn-ghost" bindtap="onCloseCart">继续挑选</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ② 申请记录（原"我的申请"卡，老板 2026-09-15 拍板改名） -->
+  <block wx:if="{{tab === 'log'}}">
+    <view class="card">
+      <view class="card-title">申请记录（{{list.length}} 单）</view>
+      <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+      <view class="searchbar">
+        <view class="searchbar-box">
+          <input class="searchbar-input" value="{{kw}}" data-kw="kw" bindinput="onSearchInput" placeholder="搜食材名、单号或状态" confirm-type="search" />
+          <text class="searchbar-clear" wx:if="{{kw}}" data-kw="kw" bindtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view class="searchbar-empty" wx:if="{{kw && list.length === 0}}">没有匹配「{{kw}}」</view>
+      <view wx:if="{{list.length === 0 && !kw}}" class="empty">暂无申请记录</view>
+      <view wx:for="{{list}}" wx:key="_id" class="list-item">
+        <view class="li-main">
+          <view class="li-title"><text user-select="{{true}}">{{item.timeText}} · 单号 {{item._id}}</text>
+            <text class="tag {{item.status === 'pending' ? 'orange' : (item.status === 'confirmed' ? 'green' : (item.status === 'rejected' ? 'red' : 'gray'))}}">{{item.statusLabel}}</text>
+          </view>
+          <view class="li-sub">{{item.itemsText}}</view>
+          <view class="li-sub" wx:if="{{item.status === 'rejected'}}">驳回原因：{{item.rejectReason}}</view>
+          <!-- 老板 2026-10-09：管理端改过数量的单子，门店必须看得到（货按改后的数发） -->
+          <view class="adj-note" wx:if="{{item.adjusted && item.adjustNote}}">管理端已调整数量：{{item.adjustNote}}</view>
+        </view>
+        <view class="li-right">
+          <text wx:if="{{item.canCancel}}" class="btn-mini danger" data-id="{{item._id}}" bindtap="cancelReq">撤回</text>
+          <text wx:if="{{item.canCopy}}" class="btn-mini ghost" data-id="{{item._id}}" bindtap="copyReq">复制为新单</text>
+        </view>
+      </view>
+      <view class="hint">单据只经历一次状态流转；驳回 / 撤回后用「复制为新单」回填购物车重提，原单不变。</view>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "search-picker": "/components/search-picker/search-picker"
+  },
+  "navigationBarTitleText": "采购入库"
+}

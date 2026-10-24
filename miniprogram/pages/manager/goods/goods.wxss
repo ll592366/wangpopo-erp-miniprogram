@@ -1,0 +1,37 @@
+/* pages/manager/goods/goods.wxss — 复用全局样式 */
+/* 菜品消耗清单：chip 多行小标签，老板 2026-09-15 优化消耗显示 */
+.consume-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 10rpx;
+}
+.consume-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 6rpx 16rpx;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 12rpx;
+  font-size: 24rpx;
+}
+.consume-chip-name { font-weight: 600; }
+.consume-chip-qty { opacity: 0.85; font-size: 22rpx; }
+
+/* ---------- 食材下架（老板 2026-10 拍板） ---------- */
+/* 顶部开关：「显示已下架（N）」，关=白底描边，开=主色填充 + 前缀 ✓ */
+.gd-switch {
+  display: inline-block;
+  font-size: 24rpx;
+  padding: 10rpx 22rpx;
+  border-radius: 10rpx;
+  line-height: 1.4;
+  color: var(--primary);
+  background: #ffffff;
+  border: 2rpx solid var(--primary);
+}
+.gd-switch:active { background: var(--primary-light); }
+.gd-switch-on { background: var(--primary); color: #ffffff; }
+/* 已下架行灰显（配合「已下架」灰色标签） */
+.gd-off { opacity: 0.55; }

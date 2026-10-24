@@ -1,0 +1,90 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">待处理（{{pending.length}} 单）</view>
+    <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+    <view class="searchbar">
+      <view class="searchbar-box">
+        <input class="searchbar-input" value="{{kwPending}}" data-kw="kwPending" bindinput="onSearchInput" placeholder="搜门店名或单号" confirm-type="search" />
+        <text class="searchbar-clear" wx:if="{{kwPending}}" data-kw="kwPending" bindtap="onSearchClear">✕</text>
+      </view>
+    </view>
+    <view class="searchbar-empty" wx:if="{{kwPending && pending.length === 0}}">没有匹配「{{kwPending}}」</view>
+    <view wx:if="{{pending.length === 0 && !kwPending}}" class="empty">暂无待处理申请</view>
+    <view wx:for="{{pending}}" wx:key="_id" class="list-item">
+      <view class="li-main">
+        <view class="li-title"><text user-select="{{true}}">{{item.timeText}} · {{item.storeName}} · 单号 {{item._id}}</text></view>
+        <view class="li-sub">{{item.itemsText}}</view>
+        <!-- 老板 2026-10-09：管理端改过数量的单子，在处理页就能看出改了啥 -->
+        <view class="adj-note" wx:if="{{item.adjusted && item.adjustNote}}">已调整：{{item.adjustNote}}</view>
+      </view>
+      <view class="li-right">
+        <text class="btn-mini ghost" data-id="{{item._id}}" bindtap="copyReq">复制</text>
+        <text class="btn-mini primary" data-id="{{item._id}}" bindtap="confirmReq">确认</text>
+        <text class="btn-mini danger" data-id="{{item._id}}" bindtap="openAdjust">修改</text>
+        <!-- 驳回（2026-10-13 恢复）：danger 描边样式，跟「修改」一排；pending 专用 -->
+        <text class="btn-mini ghost rej-btn" data-id="{{item._id}}" bindtap="rejectReq">驳回</text>
+      </view>
+    </view>
+    <view class="hint">「修改」= 把申请数量改成合理值（可逐条改、可删除），改完仍为待处理、不动库存；点「确认」才按改后的数量结清（同一事务：总仓 −、门店 +，库存不足整体拒绝）。</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">已处理（{{done.length}} 单）</view>
+    <view class="searchbar">
+      <view class="searchbar-box">
+        <input class="searchbar-input" value="{{kwDone}}" data-kw="kwDone" bindinput="onSearchInput" placeholder="搜门店名或单号" confirm-type="search" />
+        <text class="searchbar-clear" wx:if="{{kwDone}}" data-kw="kwDone" bindtap="onSearchClear">✕</text>
+      </view>
+    </view>
+    <view class="searchbar-empty" wx:if="{{kwDone && done.length === 0}}">没有匹配「{{kwDone}}」</view>
+    <view wx:if="{{done.length === 0 && !kwDone}}" class="empty">暂无已处理申请</view>
+    <view wx:for="{{done}}" wx:key="_id" class="list-item">
+      <view class="li-main">
+        <view class="li-title"><text user-select="{{true}}">{{item.timeText}} · {{item.storeName}} · 单号 {{item._id}}</text></view>
+        <view class="li-sub">{{item.itemsText}}</view>
+        <view class="li-sub" wx:if="{{item.status === 'rejected'}}">驳回原因：{{item.rejectReason}}</view>
+        <view class="adj-note" wx:if="{{item.adjusted && item.adjustNote}}">已调整：{{item.adjustNote}}</view>
+      </view>
+      <view class="li-right">
+        <text class="btn-mini ghost" data-id="{{item._id}}" bindtap="copyReq">复制</text>
+        <!-- 删除（2026-10-13）：只放终态卡（已驳回/已撤回）。已确认单有库存流水不能删，
+             待处理单要先驳回或确认——云函数都会拒并回人话，这里直接不给入口 -->
+        <text wx:if="{{item.status === 'rejected' || item.status === 'cancelled'}}"
+          class="btn-mini danger" data-id="{{item._id}}" bindtap="removeReq">删除</text>
+        <text class="tag {{item.status === 'confirmed' ? 'green' : (item.status === 'rejected' ? 'red' : 'gray')}}">{{item.statusLabel}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ================= 修改数量弹窗（老板 2026-10-09：「驳回」改「修改」） ================= -->
+  <view class="ip-mask" wx:if="{{adjustOpen}}" bindtap="closeAdjust">
+    <view class="ip-panel adj-panel" catchtap="noop">
+      <view class="ip-header">
+        <view class="ip-title">{{adjustTitle}}</view>
+        <text class="ip-close" wx:if="{{!adjustSaving}}" bindtap="closeAdjust">关闭</text>
+      </view>
+      <view class="ip-list">
+        <view wx:if="{{adjustItems.length === 0}}" class="ip-empty-row">都被删掉了，至少留一种食材</view>
+        <view wx:for="{{adjustItems}}" wx:key="itemId" class="adj-row">
+          <view class="adj-name">
+            <text user-select="{{true}}">{{item.name}}</text>
+            <text class="adj-spec" wx:if="{{item.spec}}"> {{item.spec}}</text>
+            <text class="adj-spec" wx:if="{{item.unit}}">（{{item.unit}}）</text>
+          </view>
+          <view class="adj-ctrl">
+            <!-- 原生 input 定高靠全局 .input 的 height（min-height 无效），此处只覆盖宽度 -->
+            <input class="input adj-qty" type="digit" value="{{item.qtyText}}" data-idx="{{index}}"
+                   bindinput="onAdjustInput" placeholder="0" placeholder-class="adj-ph" />
+            <text class="btn-mini danger adj-del" data-idx="{{index}}" bindtap="onAdjustDel">删除</text>
+          </view>
+        </view>
+      </view>
+      <view class="adj-footer">
+        <view class="btn btn-ghost adj-btn" bindtap="closeAdjust">取消</view>
+        <view class="btn btn-primary adj-btn" data-confirm="0" bindtap="saveAdjust">{{adjustSaving ? '保存中' : '保存'}}</view>
+        <view class="btn btn-ok adj-btn" data-confirm="1" bindtap="saveAdjust">保存并确认</view>
+      </view>
+      <view class="adj-hint">数量改成实际要发的数，改完全部食材再点「保存并确认」结清库存；「保存」只改单子、先不结清。填 0 或点「删除」＝不要这一行。</view>
+    </view>
+  </view>
+</view>

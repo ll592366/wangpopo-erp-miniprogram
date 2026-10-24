@@ -1,0 +1,120 @@
+/* components/search-picker — 自定义搜索下拉弹窗（替换微信 picker 弹层，老板 32rpx 大字号） */
+.ip-wrap { position: relative; width: 100%; }
+
+/* 触发区 = 卡片式（不再是仿输入框）：已选高亮卡 / 未选虚线占位卡
+   规格与其他输入框完全一致：定高 72rpx + 12rpx 圆角（老板 2026-09-12 要求一样大小） */
+.ip-trigger {
+  display: flex;
+  align-items: center;
+  height: 72rpx;
+  box-sizing: border-box;
+  border-radius: 12rpx;
+  padding: 0 20rpx;
+}
+.ip-card {
+  background: var(--primary-light);
+  border: 2rpx solid var(--primary);
+}
+.ip-card-name {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.4;
+}
+.ip-card-change {
+  color: var(--primary);
+  font-size: 24rpx;
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+.ip-card-empty {
+  background: var(--gray-light);
+  border: 2rpx dashed #c9c5bd;
+  justify-content: center;
+  gap: 8rpx;
+}
+.ip-card-plus { color: var(--primary); font-size: 28rpx; }
+.ip-card-hint { color: var(--gray); font-size: 28rpx; }
+.ip-disabled { opacity: 0.5; }
+
+.ip-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ip-panel {
+  width: 70%;
+  max-height: 55vh;
+  background: #ffffff;
+  border-radius: 20rpx;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ip-header {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 24rpx;
+  border-bottom: 2rpx solid var(--gray-light);
+  gap: 16rpx;
+}
+.ip-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: var(--gray-light);
+  border-radius: 12rpx;
+  padding: 0 16rpx;
+  min-height: 72rpx;
+}
+.ip-search-input {
+  flex: 1;
+  font-size: 30rpx;
+  padding: 16rpx 0;
+  background: transparent;
+}
+.ip-search-clear {
+  color: var(--gray);
+  font-size: 36rpx;
+  padding: 0 8rpx;
+  line-height: 1;
+}
+.ip-close {
+  color: var(--primary);
+  font-size: 30rpx;
+  padding: 8rpx 4rpx;
+}
+
+.ip-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12rpx 0;
+}
+.ip-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 32rpx;
+  font-size: 32rpx;
+  line-height: 1.4;
+  border-bottom: 2rpx solid var(--gray-light);
+}
+.ip-row:last-child { border-bottom: none; }
+.ip-row-active { background: var(--primary-light); }
+.ip-row-label { flex: 1; }
+.ip-row-check {
+  color: var(--primary);
+  font-size: 32rpx;
+  font-weight: 500;
+}
+.ip-empty-row {
+  padding: 60rpx 24rpx;
+  text-align: center;
+  color: var(--gray);
+  font-size: 28rpx;
+}

@@ -1,0 +1,5 @@
+{
+  "usingComponents": {},
+  "navigationBarTitleText": "总仓库存+预警",
+  "enablePullDownRefresh": true
+}

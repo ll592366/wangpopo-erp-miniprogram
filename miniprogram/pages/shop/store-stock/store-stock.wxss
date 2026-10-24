@@ -1,0 +1,81 @@
+/* pages/shop/store-stock/store-stock.wxss — 库存与消耗 tab 样式（v1.0.3） */
+/* 两个 tab 横排：① 库存 ② 消耗 */
+.ss-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+.ss-tab {
+  flex: 1;
+  text-align: center;
+  height: 72rpx;
+  line-height: 72rpx;
+  background: var(--gray-light);
+  color: var(--gray);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.ss-tab-active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(176, 58, 46, 0.25);
+}
+/* tab 下方当前 section 的小标题（不算 card-title，置灰低饱和） */
+.ss-count {
+  font-size: 24rpx;
+  color: var(--gray);
+  margin: 12rpx 0 16rpx;
+}
+
+/* 消耗明细弹层（点记录弹出，老板 2026-09-15 拍板；双类名提特异性覆盖全局 .ip-panel 宽度） */
+.ip-panel.detail-panel {
+  width: 82%;
+  max-height: 76vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-sizing: border-box;
+}
+.detail-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10rpx 0;
+}
+.detail-label {
+  font-size: 26rpx;
+  color: var(--gray);
+}
+.detail-val {
+  font-size: 28rpx;
+  color: #333333;
+  font-weight: 500;
+}
+.detail-sep {
+  height: 1rpx;
+  background: var(--gray-light);
+  margin: 16rpx 0;
+}
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid var(--gray-light);
+}
+.detail-item:last-child {
+  border-bottom: none;
+}
+.detail-item-name {
+  font-size: 28rpx;
+  color: #333333;
+}
+.detail-item-qty {
+  font-size: 28rpx;
+  color: var(--primary);
+  font-weight: 600;
+}

@@ -1,0 +1,56 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">总仓采购入库</view>
+    <view class="sub">纯数量口径：无单价、无供应商、无金额。档案里有的食材下拉选，只有数量要填。</view>
+
+    <!-- ① 食材：自定义可搜索下拉弹窗（32rpx 大字号，替代微信 picker 小字弹层） -->
+    <view class="field">
+      <label class="field-label">食材（下拉选择）</label>
+      <search-picker
+        id="picker"
+        options="{{options}}"
+        value="{{picked ? picked._id : ''}}"
+        placeholder="请选择食材 ▾"
+        bind:change="onPick" />
+    </view>
+
+    <!-- ② 规格 / 单位：选中后自动带出，只读 -->
+    <view class="form-row">
+      <view class="field">
+        <label class="field-label">规格（自动带出）</label>
+        <view wx:if="{{picked && picked.spec}}" class="input readonly">{{picked.spec}}</view>
+        <view wx:elif="{{picked}}" class="input readonly readonly-tap" bindtap="goArchive">档案未填规格 · 去补 ›</view>
+        <view wx:else class="input readonly">—</view>
+      </view>
+      <view class="field">
+        <label class="field-label">单位（自动带出）</label>
+        <view class="input readonly">{{picked ? picked.unit : '—'}}</view>
+      </view>
+    </view>
+
+    <!-- ③ 数量：唯一需要填的 -->
+    <view class="field">
+      <label class="field-label">采购数量<span wx:if="{{picked}}">（{{picked.unit}}）</span></label>
+      <input class="input" type="digit" value="{{qty}}" bindinput="onQty" placeholder="例：50" />
+    </view>
+
+    <view class="field">
+      <label class="field-label">备注（可空）</label>
+      <input class="input" value="{{remark}}" bindinput="onRemark" placeholder="例：周二直采" />
+    </view>
+
+    <button class="btn btn-primary" bindtap="submit" disabled="{{submitting}}">入库</button>
+    <view class="hint" wx:if="{{options.length === 0}}">
+      还没有食材档案。请先到「商品管理 → 食材档案」新建（填名称/规格/单位/预警值），再来入库。
+    </view>
+    <button class="btn btn-ghost" style="margin-top:16rpx" bindtap="goArchive">＋ 去新建食材档案</button>
+  </view>
+
+  <view class="card">
+    <view class="card-title">去总仓库存看结果</view>
+    <view class="sub">入库成功后可在「总仓库存+预警」页查看最新余额与日结流水。</view>
+    <navigator url="/pages/manager/wh-stock-alert/wh-stock-alert" open-type="navigate">
+      <button class="btn btn-ghost">前往总仓库存</button>
+    </navigator>
+  </view>
+</view>

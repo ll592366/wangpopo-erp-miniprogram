@@ -1,0 +1,9 @@
+{
+  "_comment": "备而不用（DO NOT DEPLOY）：老板 2026-09-19 拍板换算不上移档案，本云函数仅供日后参考，不要上传部署。",
+  "name": "migrate",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

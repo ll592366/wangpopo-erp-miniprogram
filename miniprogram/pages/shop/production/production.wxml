@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="topbar">
+    <text class="tb-title">王婆婆 · 门店端</text>
+    <text class="tb-action" bindtap="onExit">退出登录 ›</text>
+  </view>
+
+  <!-- 滚动通知栏：库存预警 + 本店待确认申请（没有内容时整条不显示） -->
+  <notice-bar id="noticeBar" />
+
+  <view class="card">
+    <view class="card-title">功能面板 · 门店端</view>
+    <view class="grid">
+      <navigator class="grid-item" url="/pages/shop/requisition/requisition"><text class="gi-name">食材申请</text></navigator>
+      <navigator class="grid-item" url="/pages/shop/store-stock/store-stock"><text class="gi-name">库存与消耗</text></navigator>
+      <navigator class="grid-item" url="/pages/shop/consume-summary/consume-summary"><text class="gi-name">消耗汇总</text></navigator>
+    </view>
+    <view class="hint">v1.0.3 起门店端只做"看库存 + 发申请 + 退出"三件事；生产记录由管理端统一录入。</view>
+  </view>
+</view>

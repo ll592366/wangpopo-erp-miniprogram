@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="card">
+    <view class="card-title">总仓库存（{{rows.length}} 种{{alertCount > 0 ? ' · 预警 ' + alertCount : ''}}）</view>
+    <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+    <view class="searchbar">
+      <view class="searchbar-box">
+        <input class="searchbar-input" value="{{kw}}" data-kw="kw" bindinput="onSearchInput" placeholder="搜食材名" confirm-type="search" />
+        <text class="searchbar-clear" wx:if="{{kw}}" data-kw="kw" bindtap="onSearchClear">✕</text>
+      </view>
+    </view>
+    <view class="searchbar-empty" wx:if="{{kw && rows.length === 0}}">没有匹配「{{kw}}」</view>
+    <view wx:if="{{rows.length === 0 && !kw}}" class="empty">暂无库存数据</view>
+    <view wx:for="{{rows}}" wx:key="itemId" class="list-item {{item.low ? 'list-item-low' : ''}}">
+      <view wx:if="{{item.low}}" class="low-bar"></view>
+      <view class="li-main">
+        <view class="li-title">{{item.name}}</view>
+        <view class="li-sub">阈值 {{item.thText}} {{item.unit}} · 更新 {{item.timeText}}</view>
+      </view>
+      <view class="li-right">
+        <text class="num {{item.low ? 'num-neg' : 'num-pos'}}" user-select="{{true}}">{{item.qtyText}}</text>
+        <text class="tag {{item.low ? 'red' : 'green'}}" style="margin-left:12rpx">{{item.low ? '缺 ' + item.gap + ' ' + item.unit : '正常'}}</text>
+      </view>
+    </view>
+    <view class="hint">库存来源：采购入库 +；申请确认 −；门店出品不经过总仓。缺货食材排最前（左边红色色条）；预警口径 = 库存 &lt; 预警值（未填默认 2），按食材自身单位比对。</view>
+  </view>
+</view>

@@ -1,0 +1,2 @@
+/* pages/shop/consume-summary/consume-summary.wxss
+   样式全部走全局 app.wxss 的 .cs-* / .rq-tabs 共用块，本页无需额外样式。 */

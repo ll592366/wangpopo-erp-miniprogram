@@ -1,0 +1,159 @@
+/* pages/shop/requisition — 美团式购物车版（v1.0.3） */
+/* 行：左侧食材信息 / 右侧 [-] [数字] [+]，行高与全项目 72rpx 一致 */
+/* 顶部双 tab：① 食材申请 / ② 申请记录（v1.0.3 老板 2026-09-15 拍板） */
+.rq-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+.rq-tab {
+  flex: 1;
+  text-align: center;
+  height: 72rpx;
+  line-height: 72rpx;
+  background: var(--gray-light);
+  color: var(--gray);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.rq-tab-active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(176, 58, 46, 0.25);
+}
+.mr-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 12rpx 0;
+  border-bottom: 1rpx solid #efece5;
+}
+.mr-row:last-child { border-bottom: none; }
+.mr-main { flex: 1; min-width: 0; }
+.mr-name { font-size: 30rpx; font-weight: 600; color: var(--text); }
+.mr-sub { font-size: 24rpx; color: var(--gray); margin-top: 4rpx; }
+.mr-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+.mr-btn {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 36rpx;
+  color: var(--primary);
+  background: var(--primary-light);
+  border-radius: 12rpx;
+}
+.mr-btn-sm { width: 48rpx; height: 48rpx; line-height: 48rpx; font-size: 32rpx; }
+.mr-qty {
+  width: 96rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 28rpx;
+  background: var(--gray-light);
+  border-radius: 12rpx;
+  box-sizing: border-box;
+  padding: 0;
+}
+.mr-qty-sm { width: 80rpx; height: 48rpx; line-height: 48rpx; font-size: 26rpx; }
+
+/* 底部购物车浮条（老板 2026-09-13 拍板：购物车·查看·申请 三段式，用 <view> 不用 <button>） */
+.cart-bar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 24rpx;
+  height: 112rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 0 24rpx;
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(176, 58, 46, 0.35);
+  z-index: 998;
+}
+.cart-bar-info {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  min-width: 0;
+  cursor: pointer;
+}
+.cart-bar-label { font-size: 30rpx; font-weight: 600; }
+.cart-bar-count { font-size: 30rpx; opacity: 0.85; }
+.cart-bar-actions { display: flex; align-items: center; gap: 16rpx; flex-shrink: 0; }
+
+/* 自定义按钮（<view> 实现，避开 WeChat <button> 原生样式坑） */
+.cb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140rpx;
+  height: 72rpx;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 16rpx;
+  box-sizing: border-box;
+  border: 1rpx solid transparent;
+  cursor: pointer;
+  user-select: none;
+}
+.cb-btn-ghost {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.cb-btn-primary {
+  background: #ffffff;
+  color: var(--primary);
+}
+.cb-btn-disabled {
+  background: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+
+/* 管理端「修改数量」提示（老板 2026-10-09 拍板：改过的痕迹门店端也要看到）
+   浅色小字条，与申请记录里的驳回原因提示区分开 */
+.adj-note {
+  display: inline-block;
+  margin-top: 8rpx;
+  padding: 6rpx 14rpx;
+  font-size: 22rpx;
+  line-height: 1.4;
+  color: var(--text-sub, #777777);
+  background: var(--gray-light, #f0efec);
+  border-radius: 8rpx;
+}
+
+/* 购物车弹层（复用 .ip-mask / .ip-panel 居中弹层 + 自有 cart-panel） */
+.cart-panel { /* 继承 .ip-panel 70% 宽 + 55vh + 居中 */ }
+.ip-title { font-size: 32rpx; font-weight: 600; color: var(--text); flex: 1; }
+.cart-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.cart-row-ctrl { display: flex; align-items: center; gap: 8rpx; flex-shrink: 0; }
+.cart-row-del { color: var(--danger); font-size: 24rpx; padding: 0 8rpx; flex-shrink: 0; }
+.cart-footer {
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 24rpx;
+  border-top: 1rpx solid #efece5;
+}
+.cart-footer .btn { flex: 1; }

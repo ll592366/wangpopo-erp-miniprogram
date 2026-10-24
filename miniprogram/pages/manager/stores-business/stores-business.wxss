@@ -1,0 +1,63 @@
+/* pages/manager/stores-business/store-business.wxss — 分店经营（v1.0.3） */
+/* 时间范围 tab：今日 / 近7天 / 本月 */
+.sb-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin: 12rpx 0 16rpx;
+}
+.sb-tab {
+  flex: 1;
+  text-align: center;
+  height: 72rpx;
+  line-height: 72rpx;
+  background: var(--gray-light);
+  color: var(--gray);
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.sb-tab-active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2rpx 8rpx rgba(176, 58, 46, 0.25);
+}
+
+/* 门店卡片 */
+.store-card {
+  background: var(--gray-light);
+  border-radius: 16rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
+  cursor: pointer;
+}
+.store-card:last-child { margin-bottom: 0; }
+.store-head {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+.store-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+}
+.store-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 16rpx 20rpx;
+}
+.store-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 26rpx;
+}
+.store-stat-label { color: var(--gray); }
+.store-stat-value { color: var(--text); font-weight: 500; }

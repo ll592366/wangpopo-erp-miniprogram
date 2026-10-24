@@ -1,0 +1,27 @@
+<view class="page">
+  <view class="topbar">
+    <text class="tb-title">王婆婆 · 管理端</text>
+    <text class="tb-action" bindtap="onExit">退出登录 ›</text>
+  </view>
+
+  <!-- 滚动通知栏：总仓预警 + 待确认申请（没有内容时整条不显示） -->
+  <notice-bar id="noticeBar" />
+
+  <!-- 宫格导航（v1.0.3 老板拍板：2 列大卡；点击卡片才进对应页） -->
+  <view class="card">
+    <view class="card-title">功能面板 · 管理端</view>
+    <view class="grid grid-2col">
+      <navigator class="grid-item" url="/pages/manager/stores-business/stores-business"><text class="gi-name">门店经营</text></navigator>
+      <navigator class="grid-item" url="/pages/manager/requisition-process/requisition-process">
+        <text class="gi-name">申请处理</text>
+        <view class="gi-badge" wx:if="{{pendingCount > 0}}">{{pendingCount > 99 ? '99+' : pendingCount}}</view>
+      </navigator>
+      <navigator class="grid-item" url="/pages/manager/purchase/purchase"><text class="gi-name">采购入库</text></navigator>
+      <navigator class="grid-item" url="/pages/manager/goods/goods"><text class="gi-name">商品管理</text></navigator>
+      <navigator class="grid-item" url="/pages/manager/wh-stock-alert/wh-stock-alert"><text class="gi-name">库存预警</text></navigator>
+      <navigator class="grid-item" url="/pages/manager/consume-summary/consume-summary"><text class="gi-name">消耗汇总</text></navigator>
+      <navigator class="grid-item" url="/pages/manager/shops-accounts/shops-accounts"><text class="gi-name">账号管理</text></navigator>
+    </view>
+    <view class="hint">点上方卡片进入对应功能页。</view>
+  </view>
+</view>

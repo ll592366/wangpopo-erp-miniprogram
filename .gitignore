@@ -1,0 +1,7 @@
+node_modules/
+Temp/
+tmp/
+_legacy_beef_erp/
+_legacy_nested_shared_2026-10-08/
+*.log
+.DS_Store

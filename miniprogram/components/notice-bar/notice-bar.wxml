@@ -1,0 +1,19 @@
+<view class="nb" wx:if="{{items.length > 0}}">
+  <view class="nb-icon">🔔</view>
+
+  <swiper class="nb-swiper"
+          vertical
+          circular="{{items.length > 1}}"
+          autoplay="{{items.length > 1}}"
+          interval="3500"
+          duration="600"
+          easing-function="easeOutCubic">
+    <swiper-item wx:for="{{items}}" wx:key="key">
+      <view class="nb-item" data-url="{{item.url}}" data-kind="{{item.kind}}" bindtap="onTap">
+        <text class="nb-tag nb-tag-{{item.kind}}">{{item.kind === 'alert' ? '预警' : (item.kind === 'req' ? '待确认' : '更多')}}</text>
+        <text class="nb-text">{{item.text}}</text>
+        <text class="nb-go">›</text>
+      </view>
+    </swiper-item>
+  </swiper>
+</view>

@@ -1,0 +1,79 @@
+/* pages/manager/shops-accounts/shops-accounts.wxss — 复用全局样式 + 改密弹层 */
+.pwd-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pwd-panel {
+  width: 86%;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 32rpx 28rpx;
+  box-sizing: border-box;
+}
+.pwd-panel-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 20rpx;
+}
+
+/* 查看日记链接 */
+.view-log-link {
+  font-size: 26rpx;
+  color: #7c3aed;
+  margin-left: auto;
+  padding: 4rpx 0;
+}
+.view-log-link:active {
+  opacity: 0.6;
+}
+
+/* 操作日记弹层 */
+.log-panel {
+  width: 86%;
+  max-height: 75vh;
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.log-row {
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+.log-row:last-child {
+  border-bottom: none;
+}
+.log-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6rpx;
+}
+.log-actor {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #333;
+}
+.log-time {
+  font-size: 22rpx;
+  color: #999;
+}
+.log-row-body {
+  font-size: 26rpx;
+  color: #555;
+  line-height: 1.5;
+}
+.log-row-detail {
+  font-size: 24rpx;
+  color: #888;
+  margin-top: 4rpx;
+  line-height: 1.4;
+  word-break: break-all;
+}

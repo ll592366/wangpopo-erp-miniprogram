@@ -1,0 +1,42 @@
+<view class="ip-wrap">
+  <!-- 已选 = 高亮卡片（大字名称 + 更换入口）；未选 = 虚线占位卡。点击整卡弹选择 -->
+  <view class="ip-trigger {{currentLabel ? 'ip-card' : 'ip-card-empty'}} {{disabled ? 'ip-disabled' : ''}}" bindtap="onOpen">
+    <block wx:if="{{currentLabel}}">
+      <text class="ip-card-name">{{currentLabel}}</text>
+      <text class="ip-card-change">更换 ›</text>
+    </block>
+    <block wx:else>
+      <text class="ip-card-plus">＋</text>
+      <text class="ip-card-hint">{{placeholder}}</text>
+    </block>
+  </view>
+  <view class="ip-mask" wx:if="{{open}}" bindtap="onClose">
+    <view class="ip-panel" catchtap="noop">
+      <view class="ip-header">
+        <view class="ip-search">
+          <input class="ip-search-input"
+                 type="text"
+                 value="{{keyword}}"
+                 bindinput="onSearchInput"
+                 placeholder="搜索名称 / 规格 / 单位"
+                 confirm-type="search" />
+          <text class="ip-search-clear" wx:if="{{keyword}}" bindtap="onClearSearch">×</text>
+        </view>
+        <text class="ip-close" bindtap="onClose">取消</text>
+      </view>
+
+      <view class="ip-list">
+        <view wx:if="{{filtered.length === 0}}" class="ip-empty-row">
+          没有匹配「{{keyword}}」的项
+        </view>
+        <view wx:for="{{filtered}}" wx:key="_id"
+              class="ip-row {{item._id === value ? 'ip-row-active' : ''}}"
+              data-id="{{item._id}}"
+              bindtap="onPick">
+          <text class="ip-row-label">{{item.label || item.name}}</text>
+          <text class="ip-row-check" wx:if="{{item._id === value}}">✓</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

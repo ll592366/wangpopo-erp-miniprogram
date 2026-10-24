@@ -1,0 +1,238 @@
+<view class="page">
+  <!-- 顶部 tab（老板 2026-09-15 拍板：整个页面三 tab） -->
+  <view class="card">
+    <view class="rq-tabs">
+      <view class="rq-tab {{tab === 'stock' ? 'rq-tab-active' : ''}}" data-tab="stock" bindtap="switchTab">① 库存</view>
+      <view class="rq-tab {{tab === 'consume' ? 'rq-tab-active' : ''}}" data-tab="consume" bindtap="switchTab">② 录入消耗</view>
+      <view class="rq-tab {{tab === 'history' ? 'rq-tab-active' : ''}}" data-tab="history" bindtap="switchTab">③ 历史消耗</view>
+      <view class="rq-tab {{tab === 'calib' ? 'rq-tab-active' : ''}}" data-tab="calib" bindtap="switchTab">④ 校准记录</view>
+    </view>
+  </view>
+
+  <!-- ① 库存（老板 2026-09-15 拍板：仅库存卡） -->
+  <block wx:if="{{tab === 'stock'}}">
+    <!-- 库存（2026-10-08 老板拍板：删掉「本店统一阈值」卡 —— 每个食材都能在校准弹窗里单独设，
+         没单独设的就是默认 2；不再需要一张全店共用的卡） -->
+    <view class="card">
+      <view class="card-title">库存（{{inventory.length}} 种食材{{alertCount > 0 ? ' · 预警 ' + alertCount : ''}}）</view>
+      <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+      <view class="searchbar">
+        <view class="searchbar-box">
+          <input class="searchbar-input" value="{{kwInv}}" data-kw="kwInv" bindinput="onSearchInput" placeholder="搜食材名" confirm-type="search" />
+          <text class="searchbar-clear" wx:if="{{kwInv}}" data-kw="kwInv" bindtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view class="searchbar-empty" wx:if="{{kwInv && inventory.length === 0}}">没有匹配「{{kwInv}}」</view>
+      <view wx:if="{{inventory.length === 0 && !kwInv}}" class="empty">暂无库存数据</view>
+      <!-- 点任意一行 → 弹出「库存校准」（2026-10-08 老板拍板：覆盖式更正库存 + 该食材单独阈值） -->
+      <view wx:for="{{inventory}}" wx:key="itemId" class="list-item {{item.low ? 'list-item-low' : ''}}"
+        data-idx="{{index}}" bindtap="openCalib">
+        <view wx:if="{{item.low}}" class="low-bar"></view>
+        <view class="li-main">
+          <view class="li-title">{{item.name}}<text wx:if="{{item.spec}}" class="li-spec">（{{item.spec}}）</text></view>
+          <view class="li-sub">{{item.ownThreshold ? '单独阈值' : '阈值'}} {{item.thText}} {{item.unit}} · 更新 {{item.timeText}}</view>
+        </view>
+        <view class="li-right">
+          <text class="num {{item.low ? 'num-neg' : 'num-pos'}}" user-select="{{true}}">{{item.qtyText}}</text>
+          <text class="tag {{item.low ? 'red' : 'green'}}" style="margin-left:12rpx">{{item.low ? '缺 ' + item.gap + ' ' + item.unit : '正常'}}</text>
+        </view>
+      </view>
+      <view class="hint">点任意一行食材，可以校准它的库存数量、或单独设预警阈值。</view>
+    </view>
+  </block>
+
+  <!-- ② 录入消耗（老板 2026-09-15 10:33 拍板：复用 食材申请 购物车 UI，点菜品加购，提交扣减该店库存） -->
+  <block wx:if="{{tab === 'consume'}}">
+    <view class="card">
+      <view class="card-title">录入消耗（点菜品加购，提交自动扣减该店库存）</view>
+      <view class="searchbar">
+        <view class="searchbar-box">
+          <input class="searchbar-input" value="{{kwDish}}" data-kw="kwDish" bindinput="onSearchInput" placeholder="搜菜名" confirm-type="search" />
+          <text class="searchbar-clear" wx:if="{{kwDish}}" data-kw="kwDish" bindtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view class="searchbar-empty" wx:if="{{kwDish && dishesView.length === 0}}">没有匹配「{{kwDish}}」</view>
+      <view wx:if="{{dishesView.length === 0 && !kwDish}}" class="empty">暂无可用菜品，请联系管理端维护菜品档案</view>
+      <view wx:for="{{dishesView}}" wx:key="_id" class="mr-row">
+        <view class="mr-main">
+          <view class="mr-name">{{item.name}}</view>
+          <view class="mr-sub">每份消耗：{{item.bomText}}</view>
+        </view>
+        <view class="mr-ctrl">
+          <text class="mr-btn" data-id="{{item._id}}" bindtap="onDec">－</text>
+          <input class="mr-qty" type="digit" value="{{cart[item._id] || ''}}" data-id="{{item._id}}" bindinput="onInputQty" placeholder="0" />
+          <text class="mr-btn" data-id="{{item._id}}" bindtap="onInc">＋</text>
+        </view>
+      </view>
+      <view class="hint">每行 [-] [数字] [+] 调整份数；底部浮条点「录入消耗」提交，自动扣减该店库存。</view>
+    </view>
+
+    <!-- 占位：避免底部浮条遮挡 -->
+    <view style="height:120rpx;"></view>
+
+    <!-- 购物车浮条（复用 食材申请 浮条样式：左信息 + 右单按钮；点左信息弹已选菜品） -->
+    <view class="cart-bar">
+      <view class="cart-bar-info" bindtap="onOpenCart">
+        <text class="cart-bar-label">购物车</text>
+        <text class="cart-bar-count">({{cartCount}})</text>
+      </view>
+      <view class="cart-bar-actions">
+        <view class="cb-btn cb-btn-primary {{cartCount === 0 ? 'cb-btn-disabled' : ''}}" bindtap="onSubmit">{{submitting ? '提交中' : '录入消耗'}}</view>
+      </view>
+    </view>
+
+    <!-- 已选菜品弹层（老板 2026-09-15 拍板：点购物车弹出，可改份数/删除；点遮罩关闭） -->
+    <view class="ip-mask" wx:if="{{cartOpen}}" bindtap="onCloseCart">
+      <view class="ip-panel cart-panel" catchtap="noop">
+        <view class="ip-header">
+          <view class="ip-title">已选 {{cartCount}} 道菜</view>
+          <text class="ip-close" bindtap="onCloseCart">关闭</text>
+        </view>
+        <view class="ip-list">
+          <view wx:if="{{cartItems.length === 0}}" class="ip-empty-row">还没有选菜品</view>
+          <view wx:for="{{cartItems}}" wx:key="_id" class="ip-row cart-row">
+            <view class="cart-row-main">
+              <text class="ip-row-label">{{item.name}}</text>
+              <text class="cart-row-sub">{{item.bomText}}</text>
+            </view>
+            <view class="cart-row-ctrl">
+              <text class="mr-btn mr-btn-sm" data-id="{{item._id}}" bindtap="onDec">－</text>
+              <input class="mr-qty mr-qty-sm" type="digit" value="{{cart[item._id] || ''}}" data-id="{{item._id}}" bindinput="onInputQty" />
+              <text class="mr-btn mr-btn-sm" data-id="{{item._id}}" bindtap="onInc">＋</text>
+              <text class="cart-row-del" data-id="{{item._id}}" bindtap="onRemoveItem">删除</text>
+            </view>
+          </view>
+        </view>
+        <view class="cart-footer">
+          <view class="cb-btn cb-btn-ghost" bindtap="onCloseCart">继续挑选</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ③ 历史消耗（老板 2026-09-15 拍板：按日期分组的消耗记录，点记录看明细） -->
+  <block wx:if="{{tab === 'history'}}">
+    <view class="card">
+      <!-- 时间范围筛选 + 导出（老板 2026-09-19 拍板）：tab 内容区最顶部一行 -->
+      <view class="ex-bar">
+        <view class="fr-pills">
+          <view wx:for="{{histPresets}}" wx:key="key" class="fr-pill {{histRange === item.key ? 'fr-pill-active' : ''}}" data-key="{{item.key}}" bindtap="switchHistRange">{{item.label}}</view>
+        </view>
+        <text class="ex-btn {{historyGroups.length === 0 ? 'ex-btn-disabled' : ''}}" bindtap="onExport">导出</text>
+      </view>
+      <!-- 自定义区间（老板 2026-09-19）：from > to 自动纠正 -->
+      <view wx:if="{{histRange === 'custom'}}" class="fr-dates">
+        <text class="fr-date-label">从</text>
+        <picker class="fr-date" mode="date" value="{{customFrom}}" bindchange="onHistFromChange">
+          <view class="input readonly cs-picker-view"><text>{{customFrom}}</text></view>
+        </picker>
+        <text class="fr-date-label">到</text>
+        <picker class="fr-date" mode="date" value="{{customTo}}" bindchange="onHistToChange">
+          <view class="input readonly cs-picker-view"><text>{{customTo}}</text></view>
+        </picker>
+      </view>
+      <view class="card-title">历史消耗（按日期）</view>
+      <view wx:if="{{historyGroups.length === 0}}" class="empty">{{histEmptyText}}</view>
+      <block wx:for="{{historyGroups}}" wx:for-item="grp" wx:for-index="gi" wx:key="dateLabel">
+        <view class="his-date">{{grp.dateLabel}} 消耗记录（{{grp.items.length}} 单）</view>
+        <view wx:for="{{grp.items}}" wx:for-item="p" wx:for-index="ii" wx:key="_id"
+          class="list-item" data-gi="{{gi}}" data-ii="{{ii}}" bindtap="openDetail">
+          <view class="li-main">
+            <view class="li-title">{{p.dishName}} × {{p.qty}} 份</view>
+            <view class="li-sub">{{p.timeText}} · {{p.detailItems.length}} 种食材</view>
+          </view>
+          <view class="li-right">
+            <text class="tag {{p.status === 'confirmed' ? 'green' : 'gray'}}">{{p.statusLabel}}</text>
+          </view>
+        </view>
+      </block>
+      <view wx:if="{{listLoadingMore}}" class="hint">加载中…</view>
+      <view wx:if="{{histCount > 0}}" class="hint">{{listHasMore ? '已加载 ' + histCount + ' 条，继续下滑查看更多' : '共 ' + histCount + ' 条 · 导出可得该时间范围全部记录'}}</view>
+      <view class="hint">点任意一条可查看消耗明细（菜品 / 份数 / 消耗食材）。</view>
+    </view>
+  </block>
+
+  <!-- ④ 校准记录（2026-10-08 老板拍板：库存校准留痕，谁改的、改前改后一目了然） -->
+  <block wx:if="{{tab === 'calib'}}">
+    <view class="card">
+      <view class="card-title">校准记录（{{calibCount}} 条）</view>
+      <view wx:if="{{calibList.length === 0 && !calibLoading}}" class="empty">这家店还没有校准过库存</view>
+      <view wx:for="{{calibList}}" wx:key="_key" class="list-item">
+        <view class="li-main">
+          <view class="li-title">{{item.itemName}}</view>
+          <view class="li-sub">{{item.timeText}} · {{item.operatorName || '管理端'}} · {{item.diffText}}</view>
+        </view>
+        <view class="li-right">
+          <text class="num num-pos" user-select="{{true}}">{{item.qtyText}}</text>
+          <text class="tag {{item.delta > 0 ? 'green' : (item.delta < 0 ? 'red' : 'gray')}}" style="margin-left:12rpx">{{item.deltaText}}</text>
+        </view>
+      </view>
+      <view wx:if="{{calibLoading}}" class="hint">加载中…</view>
+      <view wx:if="{{calibCount > 0}}" class="hint">{{calibHasMore ? '已加载 ' + calibCount + ' 条，继续下滑查看更多' : '共 ' + calibCount + ' 条'}}</view>
+      <view class="hint">「校准」= 管理端手工把该店某食材的库存改成实点数，改一次记一条，改前改后都留着。库存申请单、消耗记录不在这里。</view>
+    </view>
+  </block>
+
+  <!-- 消耗明细弹层（历史消耗点记录弹出） -->
+  <view class="ip-mask" wx:if="{{detailOpen}}" bindtap="closeDetail">
+    <view class="ip-panel detail-panel" catchtap="noop">
+      <view class="ip-header">
+        <view class="ip-title">消耗明细</view>
+        <text class="ip-close" bindtap="closeDetail">关闭</text>
+      </view>
+      <view wx:if="{{detail}}" class="detail-body">
+        <view class="detail-line"><text class="detail-label">日期</text><text class="detail-val" user-select="{{true}}">{{detail.dateLabel}}</text></view>
+        <view class="detail-line"><text class="detail-label">菜品</text><text class="detail-val" user-select="{{true}}">{{detail.dishName}} × {{detail.qty}} 份</text></view>
+        <view class="detail-line"><text class="detail-label">时间</text><text class="detail-val" user-select="{{true}}">{{detail.timeText}}</text></view>
+        <view class="detail-line"><text class="detail-label">状态</text><text class="detail-val" user-select="{{true}}">{{detail.statusLabel}}</text></view>
+        <view class="detail-sep"></view>
+        <view class="detail-label" style="margin-bottom:12rpx">消耗食材</view>
+        <view wx:if="{{detail.items.length === 0}}" class="ip-empty-row">未配置消耗清单</view>
+        <view wx:for="{{detail.items}}" wx:key="name" class="detail-item">
+          <text class="detail-item-name">{{item.name}}</text>
+          <text class="detail-item-qty" user-select="{{true}}">−{{item.qtyText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 库存校准弹层（点库存行弹出；覆盖式更正库存数量 + 该食材单独预警阈值）
+       排版 2026-10-08 老板反馈重做：信息区 / 两个独立小节 / 短提示，不再堆一段长文案 -->
+  <view class="ip-mask" wx:if="{{calibOpen}}" bindtap="closeCalib">
+    <view class="ip-panel detail-panel" catchtap="noop">
+      <view class="ip-header">
+        <view class="ip-title">库存校准</view>
+        <text class="ip-close" bindtap="closeCalib">关闭</text>
+      </view>
+      <view class="detail-body">
+        <!-- 食材名做主标题（老板 2026-10-08 二次反馈：名称藏在右对齐小字里看不见） -->
+        <view class="calib-name" user-select="{{true}}">{{calib.name}}</view>
+        <view class="calib-stats">
+          <view class="calib-stat">
+            <view class="calib-stat-k">当前库存</view>
+            <view class="calib-stat-v" user-select="{{true}}">{{calib.qtyText}}</view>
+          </view>
+          <view class="calib-stat">
+            <view class="calib-stat-k">生效阈值</view>
+            <view class="calib-stat-v" user-select="{{true}}">{{calib.thText}}</view>
+          </view>
+        </view>
+
+        <view class="calib-sec">实际清点数量{{calib.unitPart}}</view>
+        <input class="calib-input" type="digit" value="{{calibQty}}"
+          bindinput="onCalibQtyInput" placeholder="按实际数量填，保存后覆盖" placeholder-class="ph" />
+        <view class="calib-tip">不改库存就留空；确实卖完了就填 0。</view>
+
+        <view class="calib-sec">预警阈值{{calib.unitPart}}<view class="calib-sub">只管这一个食材</view></view>
+        <input class="calib-input" type="digit" value="{{calibTh}}"
+          bindinput="onCalibThInput" placeholder="留空 = 用默认 2" placeholder-class="ph" />
+        <view class="calib-tip">留空保存 = 取消单独设置，回到默认 2。</view>
+
+        <view class="calib-btns">
+          <view class="cb-btn calib-cancel" bindtap="closeCalib">取消</view>
+          <view class="cb-btn calib-save {{savingCalib ? 'calib-save-disabled' : ''}}" bindtap="onSaveCalib">{{savingCalib ? '保存中…' : '保存'}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

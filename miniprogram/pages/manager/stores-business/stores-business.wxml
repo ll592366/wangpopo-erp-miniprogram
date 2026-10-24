@@ -1,0 +1,36 @@
+<view class="page">
+  <!-- v1.0.3 老板拍板：去掉「‹ 返回功能面板」返回栏 + 去掉 3 个时间 tab（7天/本月要云函数升级，等接入再加） -->
+
+  <!-- 门店卡片网格 -->
+  <view class="card">
+    <view class="card-title">分店经营 · 门店列表（{{stores.length}} 家）</view>
+    <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+    <view class="searchbar">
+      <view class="searchbar-box">
+        <input class="searchbar-input" value="{{kw}}" data-kw="kw" bindinput="onSearchInput" placeholder="搜门店名" confirm-type="search" />
+        <text class="searchbar-clear" wx:if="{{kw}}" data-kw="kw" bindtap="onSearchClear">✕</text>
+      </view>
+    </view>
+    <view class="searchbar-empty" wx:if="{{kw && stores.length === 0}}">没有匹配「{{kw}}」</view>
+    <view wx:if="{{stores.length === 0 && !kw}}" class="empty">暂无门店，请到「账号管理」建门店</view>
+    <view wx:for="{{stores}}" wx:key="_id" class="store-card" data-id="{{item._id}}" bindtap="goStore">
+      <view class="store-head">
+        <text class="store-name">{{item.name}}</text>
+        <text wx:if="{{item.operating}}" class="tag green">营业中</text>
+        <text wx:elif="{{item.status === 'closed'}}" class="tag gray">已关闭</text>
+        <text wx:else class="tag orange">未启用</text>
+      </view>
+      <view class="store-stats">
+        <view class="store-stat">
+          <text class="store-stat-label">出品明细</text>
+          <text class="store-stat-value" user-select="{{true}}">{{item.productionCount === 0 ? '无出品' : (item.productionCount + ' 单')}}</text>
+        </view>
+        <view class="store-stat">
+          <text class="store-stat-label">食材消耗</text>
+          <text class="store-stat-value" user-select="{{true}}">{{item.consumeText}}</text>
+        </view>
+      </view>
+    </view>
+    <view class="hint" style="margin-top:16rpx">点击门店卡可看明细（库存/预警/今日出品/食材消耗/实点）。</view>
+  </view>
+</view>

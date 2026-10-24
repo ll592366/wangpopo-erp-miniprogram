@@ -1,0 +1,92 @@
+<view class="page">
+  <view class="card">
+    <view class="ss-tabs">
+      <view class="ss-tab {{tab === 'inv' ? 'ss-tab-active' : ''}}" data-tab="inv" bindtap="switchTab">① 库存</view>
+      <view class="ss-tab {{tab === 'cons' ? 'ss-tab-active' : ''}}" data-tab="cons" bindtap="switchTab">② 消耗</view>
+    </view>
+
+    <!-- ① 库存 -->
+    <block wx:if="{{tab === 'inv'}}">
+      <view class="ss-count">本店库存（{{invRows.length}} 种食材{{alertCount > 0 ? ' · 预警 ' + alertCount : ''}}）</view>
+      <!-- 检索（老板 2026-10：本地过滤，输入即出结果，不调云函数） -->
+      <view class="searchbar">
+        <view class="searchbar-box">
+          <input class="searchbar-input" value="{{kw}}" data-kw="kw" bindinput="onSearchInput" placeholder="搜食材名" confirm-type="search" />
+          <text class="searchbar-clear" wx:if="{{kw}}" data-kw="kw" bindtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view class="searchbar-empty" wx:if="{{kw && invRows.length === 0}}">没有匹配「{{kw}}」</view>
+      <view wx:if="{{invRows.length === 0 && !kw}}" class="empty">暂无库存数据</view>
+      <view wx:for="{{invRows}}" wx:key="itemId" class="list-item {{item.low ? 'list-item-low' : ''}}">
+        <view wx:if="{{item.low}}" class="low-bar"></view>
+        <view class="li-main">
+          <view class="li-title">{{item.name}}<text wx:if="{{item.spec}}" class="li-spec">（{{item.spec}}）</text></view>
+          <view class="li-sub">本店阈值 {{item.thText}} {{item.unit}} · 更新 {{item.timeText}}</view>
+        </view>
+        <view class="li-right">
+          <text class="num {{item.low ? 'num-neg' : 'num-pos'}}" user-select="{{true}}">{{item.qtyText}}</text>
+          <text class="tag {{item.low ? 'red' : 'green'}}" style="margin-left:12rpx">{{item.low ? '缺 ' + item.gap + ' ' + item.unit : '正常'}}</text>
+        </view>
+      </view>
+      <view class="hint">库存来源：管理端确认食材申请后自动 +申请量；管理端「录入消耗」按每份用量扣减。标红 = 本店库存低于本店预警值（管理端在门店详情设置，与总仓备货警戒线无关）。</view>
+    </block>
+
+    <!-- ② 消耗（按所选时间范围的该店出品记录；点记录弹明细） -->
+    <block wx:if="{{tab === 'cons'}}">
+      <!-- 时间范围筛选 + 导出（老板 2026-09-19 拍板）：tab 内容区最顶部一行 -->
+      <view class="ex-bar">
+        <view class="fr-pills">
+          <view wx:for="{{consPresets}}" wx:key="key" class="fr-pill {{consRange === item.key ? 'fr-pill-active' : ''}}" data-key="{{item.key}}" bindtap="switchConsRange">{{item.label}}</view>
+        </view>
+        <text class="ex-btn {{consRows.length === 0 ? 'ex-btn-disabled' : ''}}" bindtap="onExport">导出</text>
+      </view>
+      <!-- 自定义区间（老板 2026-09-19）：from > to 自动纠正 -->
+      <view wx:if="{{consRange === 'custom'}}" class="fr-dates">
+        <text class="fr-date-label">从</text>
+        <picker class="fr-date" mode="date" value="{{customFrom}}" bindchange="onConsFromChange">
+          <view class="input readonly cs-picker-view"><text>{{customFrom}}</text></view>
+        </picker>
+        <text class="fr-date-label">到</text>
+        <picker class="fr-date" mode="date" value="{{customTo}}" bindchange="onConsToChange">
+          <view class="input readonly cs-picker-view"><text>{{customTo}}</text></view>
+        </picker>
+      </view>
+      <view class="ss-count">消耗记录（{{consCount}} 单）</view>
+      <view wx:if="{{consRows.length === 0}}" class="empty">{{consEmptyText}}</view>
+      <view wx:for="{{consRows}}" wx:key="_id" class="list-item" data-index="{{index}}" bindtap="openDetail">
+        <view class="li-main">
+          <view class="li-title">{{item.dishName}} × {{item.qty}} 份</view>
+          <view class="li-sub">{{item.timeText}} · {{item.consumeText}}</view>
+        </view>
+        <view class="li-right">
+          <text class="tag {{item.status === 'confirmed' ? 'green' : 'gray'}}">{{item.statusLabel}}</text>
+        </view>
+      </view>
+      <view wx:if="{{listLoadingMore}}" class="hint">加载中…</view>
+      <view wx:if="{{consCount > 0}}" class="hint">{{listHasMore ? '已加载 ' + consCount + ' 条，继续下滑查看更多' : '共 ' + consCount + ' 条 · 导出可得该时间范围全部记录'}}</view>
+      <view class="hint">消耗 = 本店经管理端「录入消耗」扣减的食材记录（按所选时间范围）。点任意一条可查看明细（菜品 / 份数 / 消耗食材）。</view>
+    </block>
+  </view>
+
+  <!-- 消耗明细弹层（老板 2026-09-15 拍板：点击记录弹出详情） -->
+  <view class="ip-mask" wx:if="{{detailOpen}}" bindtap="closeDetail">
+    <view class="ip-panel detail-panel" catchtap="noop">
+      <view class="ip-header">
+        <view class="ip-title">消耗明细</view>
+        <text class="ip-close" bindtap="closeDetail">关闭</text>
+      </view>
+      <view wx:if="{{detail}}" class="detail-body">
+        <view class="detail-line"><text class="detail-label">菜品</text><text class="detail-val" user-select="{{true}}">{{detail.dishName}} × {{detail.qty}} 份</text></view>
+        <view class="detail-line"><text class="detail-label">时间</text><text class="detail-val" user-select="{{true}}">{{detail.timeText}}</text></view>
+        <view class="detail-line"><text class="detail-label">状态</text><text class="detail-val">{{detail.statusLabel}}</text></view>
+        <view class="detail-sep"></view>
+        <view class="detail-label" style="margin-bottom:12rpx">消耗食材</view>
+        <view wx:if="{{detail.items.length === 0}}" class="ip-empty-row">未配置消耗清单</view>
+        <view wx:for="{{detail.items}}" wx:key="name" class="detail-item">
+          <text class="detail-item-name">{{item.name}}</text>
+          <text class="detail-item-qty" user-select="{{true}}">−{{item.qtyText}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

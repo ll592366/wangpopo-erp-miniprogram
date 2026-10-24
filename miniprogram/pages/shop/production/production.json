@@ -1,0 +1,7 @@
+{
+  "usingComponents": {
+    "notice-bar": "/components/notice-bar/notice-bar"
+  },
+  "navigationBarTitleText": "今日出品",
+  "enablePullDownRefresh": true
+}

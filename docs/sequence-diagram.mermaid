@@ -1,0 +1,114 @@
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant FE as 客户端<br/>(小程序 / WEB)
+    participant CF as 云函数
+    participant DB as CloudBase NoSQL
+    participant LOG as op_log
+
+    Note over U,FE: ═══════════ 链路 1：门店注册开店（门店端自注册，一事务建店建号） ═══════════
+    U->>FE: 打开「注册开店」→ 填 店名 + 账号 + 密码
+    FE->>CF: callFn("register", {shopName:"万达店", username:"wanda", password:"***"})
+    activate CF
+    CF->>CF: 三字段非空校验（否则 2002）
+    CF->>DB: store.findOne({name}) → 重名? 3002
+    CF->>DB: user.findOne({username}) → 重名? 3002
+    CF->>DB: db.startTransaction()
+    CF->>DB: store.insertOne({name:"万达店", code:"WANDA", status:"open", closedAt:null})
+    CF->>DB: user.insertOne({role:"shop", storeId:新店_id, username:"wanda", isActive:true})
+    CF->>DB: op_log.insertOne({action:"store.register"})
+    CF->>DB: db.commitTransaction()
+    deactivate CF
+    CF-->>FE: {code:0, data:{store, user}}
+    FE->>U: Toast "开店成功，请登录"（管理端不参与建店建号）
+
+    Note over U,FE: ═══════════ 链路 2：食材申请 —— 提交 → 确认（一步到位）/ 驳回 / 撤回 ═══════════
+    actor S as 门店端<br/>(shop)
+    participant FE2 as 门店端<br/>shop/requisition
+    participant CF2 as 云函数<br/>requisition
+    actor M as 管理端<br/>(manager)
+    participant FE3 as 管理端<br/>manager/requisition-process
+
+    Note over S,FE2: 2-1 提申请（库存不变）
+    S->>FE2: "食材申请" 页 → 逐条选食材 + 填数量 → 提交
+    FE2->>CF2: callFn("requisition", {action:"create", storeId:"store_wanda", items:[{mat_niurou,3}]})
+    activate CF2
+    CF2->>CF2: can(user,'requisition.create','store_wanda') → shop 且本店（越权→1003 STORE_OUT_OF_SCOPE）
+    CF2->>CF2: items 非空 + 每项 qty>0（否则 2002）
+    CF2->>DB: startTransaction → requisition.insertOne({status:"pending"}) + op_log("requisition.create") → commit
+    CF2-->>FE2: {code:0, data:{requisition}}
+    deactivate CF2
+    FE2->>S: Toast "申请已提交"（总仓 / 本店库存均不变）
+
+    Note over M,FE3: 2-2 管理端确认（一步到位，无待收中间态）
+    M->>FE3: 待处理列表 → 点「确认」
+    FE3->>CF2: callFn("requisition", {action:"confirm", requisitionId:"req_..."})
+    activate CF2
+    CF2->>CF2: can(user,'requisition.confirm') → manager（shop→NO_ROLE；闭店→STORE_CLOSED）
+    CF2->>DB: requisition.findOne → 校验 status=="pending"
+    CF2->>DB: 逐 item 读 stock_balance(WAREHOUSE) → 不足则抛 2001（回滚）
+    CF2->>DB: startTransaction
+    CF2->>DB: stock_balance(WAREHOUSE).inc({qty:-申请量}) + addDayFlow('out')
+    CF2->>DB: stock_balance(store_wanda).inc({qty:+申请量}) + addDayFlow('in')
+    CF2->>DB: requisition.updateOne({status:"confirmed", handledBy, handledAt}) + op_log("requisition.confirm")
+    CF2->>DB: commit
+    CF2-->>FE3: {code:0, data:{requisition, balances[]}}
+    deactivate CF2
+    FE3->>M: Toast "已确认：总仓 −3 / 万达店 +3"（同一事务结清）
+
+    Note over M,FE3: 2-3 管理端驳回（必填原因，库存不变）
+    M->>FE3: 点「驳回」→ 弹窗填原因（必填）
+    FE3->>CF2: callFn("requisition", {action:"reject", requisitionId, rejectReason:"总仓牛肉紧张，请减量"})
+    activate CF2
+    CF2->>CF2: can(user,'requisition.reject') → manager
+    CF2->>CF2: rejectReason 为空 → 抛 2002 "驳回原因不能为空"
+    CF2->>DB: startTransaction → requisition.updateOne({status:"rejected", rejectReason, handledBy, handledAt}) + op_log("requisition.reject") → commit
+    CF2-->>FE3: {code:0, data:{requisition}}
+    deactivate CF2
+    FE3->>M: Toast "已驳回"（门店端「申请记录」可见原因）
+
+    Note over S,FE2: 2-4 门店撤回 + 复制为新单重提
+    S->>FE2: "申请记录" → 对 pending 单点「撤回」
+    FE2->>CF2: callFn("requisition", {action:"cancel", requisitionId})
+    activate CF2
+    CF2->>CF2: can(user,'requisition.cancel', req.storeId) → 仅本人本店
+    CF2->>DB: startTransaction → requisition.updateOne({status:"cancelled", handledBy, handledAt}) + op_log("requisition.cancel") → commit
+    CF2-->>FE2: {code:0, data:{requisition}}（库存不变）
+    deactivate CF2
+    S->>FE2: 对 rejected / cancelled 单点「复制为新单」→ 预填回表单 → 修改后重新提交
+    FE2->>CF2: callFn("requisition", {action:"create", storeId, items:[...]})
+    CF2-->>FE2: 新 _id / status=pending（原单不变）
+
+    Note over S,FE2: ═══════════ 支撑：今日出品（销售菜品上传，扣减 = 份数 × 每份用量） ═══════════
+    participant CF3 as 云函数<br/>production
+    S->>FE2: "今日出品" 页 → 牛肉火锅 3 份
+    FE2->>CF3: callFn("production", {storeId:"store_wanda", dishId, qty:3})
+    activate CF3
+    CF3->>DB: dish.findOne({_id:dishId}) → consumeItems=[{牛肉,0.5}] → 消耗 = 3 × 0.5 = 1.5
+    CF3->>DB: stock_balance(store_wanda, 牛肉) 读 qty → 不足则抛 2001
+    CF3->>DB: startTransaction → stock_balance.inc({qty:-1.5}) + addDayFlow('out') + production.insertOne({consumeItems:[{牛肉,1.5}], status:"confirmed"}) + op_log → commit
+    CF3-->>FE2: {code:0, data:{production, balances}}
+    deactivate CF3
+    FE2->>S: Toast "已扣 1.5 斤牛肉"
+
+    Note over S,FE2: ═══════════ 支撑：剩余实点（打烊盘点） ═══════════
+    participant CF4 as 云函数<br/>stocktake
+    S->>FE2: "剩余实点" 页 → 牛肉 1.5
+    FE2->>CF4: callFn("stocktake", {storeId:"store_wanda", itemId, actualQty:1.5})
+    activate CF4
+    CF4->>DB: 账面 = 期初 + 当日入(申请确认) − 当日出(出品) → diff = actualQty − theoryQty
+    CF4->>DB: startTransaction → stock_balance.updateOne({qty: actualQty}) + stocktake.insertOne(upsert by 营业日) + op_log → commit
+    CF4-->>FE2: {code:0, data:{stocktake:{diff:0}, balance}}
+    deactivate CF4
+    FE2->>S: 展示 "账面 1.5 / 实际 1.5 / 差异 0"
+
+    Note over M,FE3: ═══════════ 支撑：管理端/门店端登录（含闭店拦截） ═══════════
+    participant CFL as 云函数<br/>login
+    U->>FE: wx.login() → code
+    FE->>CFL: callFn("login", {code})
+    activate CFL
+    CFL->>DB: user where openid==? → 未注册? 1001
+    CFL->>DB: role=='shop' 且 store.status=='closed'? → 1001 "该门店已闭店"
+    CFL-->>FE: {code:0, data:{role, storeId, name}}
+    deactivate CFL
+    FE->>U: manager→商品管理首页；shop→今日出品首页

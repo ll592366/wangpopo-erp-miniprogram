@@ -1,0 +1,49 @@
+[BizError] 1001 密码不正确
+[BizError] 1001 账号不存在，请先注册开店或使用管理端预置账号
+[BizError] 3002 登录账号已存在：smoke_b
+[BizError] 2002 食材「基围虾」已停用，请先在档案管理启用后再入库
+[BizError] 2002 采购数量必须大于 0
+[BizError] 1003 无权限执行该操作：NO_ROLE（角色不匹配）
+[SYSTEM] ReferenceError: found is not defined
+    at C:\Users\Administrator\AppData\Local\Temp\erp-smoke-9392\requisition_bad\index.js:73:52
+    at Array.map (<anonymous>)
+    at C:\Users\Administrator\AppData\Local\Temp\erp-smoke-9392\requisition_bad\index.js:73:32
+
+================ 云函数冒烟测试 ================
+PASS  login · 管理端账号密码登录  ->  [0] ok | role=manager 首登改密=true
+PASS  login · 门店账号登录  ->  [0] ok
+PASS  login · 错误密码（业务码，非 5001）  ->  [1001] 密码不正确
+PASS  login · 账号不存在（业务码，非 5001）  ->  [1001] 账号不存在，请先注册开店或使用管理端预置账号
+PASS  login · 首登改密 setPassword  ->  [0] ok
+PASS  login · 自助改密 changePassword  ->  [0] ok
+PASS  login · 用新密码再登录  ->  [0] ok
+PASS  register · 注册开店（一事务建店建号）  ->  [0] ok | store=store_s02_20260915 user=user_smoke_b
+PASS  register · 重复账号（业务码）  ->  [3002] 登录账号已存在：smoke_b
+PASS  material · list  ->  [0] ok | rows=2
+PASS  material · save 新增  ->  [0] ok
+PASS  material · toggle 停用  ->  [0] ok
+PASS  purchase · 已停用食材入库被拦  ->  [2002] 食材「基围虾」已停用，请先在档案管理启用后再入库
+PASS  dish · list  ->  [0] ok | rows=1
+PASS  dish · save 新增  ->  [0] ok
+PASS  purchase · 新食材一键建档入库  ->  [0] ok | 总仓余额=5 食材=gen_1789448021612_9
+PASS  purchase · 已有食材重复入库  ->  [0] ok | 总仓余额=103
+PASS  purchase · 数量为 0（业务码）  ->  [2002] 采购数量必须大于 0
+PASS  inventory · 查询总仓库存  ->  [0] ok | rows=3
+PASS  inventory · adjust 手工调整  ->  [0] ok
+PASS  requisition · 门店提交申请【原报错点】  ->  [0] ok | 单号=req_20260915_SMOKE_000001 status=pending
+PASS  requisition · list  ->  [0] ok | list=1
+PASS  requisition · 管理端确认  ->  [0] ok | status=confirmed
+PASS  production · 门店出品被拦（已转管理端专属，期望 1003 NO_ROLE）  ->  [1003] 无权限执行该操作：NO_ROLE（角色不匹配）
+PASS  production · 管理端出品扣减（带 storeId）  ->  [0] ok | 单号=prod_20260915_SMOKE_000001
+PASS  production · list  ->  [0] ok | list=1
+PASS  stocktake · 门店实点  ->  [0] ok | 实际=18 理论=21
+PASS  store · list  ->  [0] ok | rows=2
+PASS  store · rename 改名  ->  [0] ok
+PASS  report · business 经营情况  ->  [0] ok
+PASS  report · lowStock 总仓预警  ->  [0] ok | rows=1
+PASS  opLog · 审计日志（必须真有记录）  ->  [0] ok | 条数=15
+PASS  export · 数据导出  ->  [0] ok
+PASS  反向对照 · 旧写法必须复现 5001  ->  [5001] 系统内部错误：found is not defined
+----------------------------------------------
+合计 34 条：通过 34，失败 0
+SMOKE RESULT: ALL GREEN
